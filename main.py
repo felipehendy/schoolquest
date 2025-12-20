@@ -11,15 +11,92 @@ import json
 import traceback
 import base64
 from io import BytesIO
-import os
 from pathlib import Path
 
-# Configuração para produção
-if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("HEROKU_APP"):
-    # Em produção, serve arquivos estáticos
+# =========================================================
+# CARREGAMENTO DE VARIÁVEIS
+# =========================================================
+load_dotenv()
+
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    raise ValueError("❌ GOOGLE_API_KEY não encontrada no arquivo .env")
+
+client = genai.Client(api_key=GOOGLE_API_KEY)
+
+# =========================================================
+# SISTEMA INTELIGENTE DE MODELOS
+# =========================================================
+def get_available_model():
+    """Retorna o melhor modelo disponível"""
+    try:
+        models = client.models.list()
+        available_models = [model.name for model in models]
+        print(f"📋 Modelos disponíveis: {available_models}")
+        
+        model_priority = [
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-001",
+            "gemini-flash-latest",
+        ]
+        
+        for preferred_name in model_priority:
+            for available_model in available_models:
+                if preferred_name in available_model:
+                    print(f"✅ Usando modelo: {available_model}")
+                    return available_model
+        
+        for available_model in available_models:
+            if "gemini" in available_model.lower():
+                print(f"⚠️ Usando fallback: {available_model}")
+                return available_model
+                
+    except Exception as e:
+        print(f"⚠️ Não foi possível listar modelos: {e}")
+    
+    print("⚠️ Usando fallback padrão: models/gemini-2.5-flash")
+    return "models/gemini-2.5-flash"
+
+MODEL_NAME = get_available_model()
+
+# =========================================================
+# CONFIGURAÇÃO DO MODELO
+# =========================================================
+generation_config = {
+    "temperature": 0.6,
+    "top_p": 0.9,
+    "top_k": 40,
+    "max_output_tokens": 4096,
+}
+
+# =========================================================
+# APP FASTAPI
+# =========================================================
+app = FastAPI(
+    title="SchoolQuest API",
+    version="1.0.0",
+    description="API gratuita de gamificação escolar para crianças"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Configuração para produção - MOVIDO PARA DEPOIS DE app = FastAPI()
+if os.getenv("RENDER") or os.getenv("RAILWAY_ENVIRONMENT"):
     from fastapi.staticfiles import StaticFiles
     
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+    # Verifica se pasta static existe
+    if Path("static").exists():
+        app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# ... resto do código continua igual
     
     @app.get("/")
     async def serve_frontend():
@@ -188,10 +265,21 @@ def validate_questions(game_data: dict):
 @app.get("/", response_class=HTMLResponse)
 async def root():
     try:
-        with open("index.html", "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        return "<h1>SchoolQuest API</h1><p>Backend ativo 🚀</p>"
+        # Tenta carregar da raiz primeiro
+        index_path = Path("index.html")
+        if index_path.exists():
+            with open(index_path, "r", encoding="utf-8") as f:
+                return HTMLResponse(f.read())
+        
+        # Depois tenta da pasta static
+        index_path = Path("static/index.html")
+        if index_path.exists():
+            with open(index_path, "r", encoding="utf-8") as f:
+                return HTMLResponse(f.read())
+    except Exception as e:
+        print(f"Erro ao carregar index.html: {e}")
+    
+    return {"message": "SchoolQuest API - Backend Online", "status": "ok"}
 
 @app.get("/api/health")
 async def health():
