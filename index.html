@@ -716,6 +716,25 @@
             margin-bottom: 10px;
         }
 
+        /* ========== CONNECTION STATUS ========== */
+        .connection-status {
+            background: #FFF5F5;
+            border: 2px solid var(--error);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .connection-status.active {
+            display: block;
+        }
+
+        .connection-status.connected {
+            background: #F0FFF4;
+            border-color: var(--success);
+        }
+
         /* ========== UTILITY ========== */
         .hidden { display: none !important; }
         .text-center { text-align: center; }
@@ -737,6 +756,12 @@
 </head>
 <body>
     <div class="container">
+        <!-- CONNECTION STATUS -->
+        <div class="connection-status" id="connectionStatus">
+            <div style="font-weight: 600; margin-bottom: 5px;">⚠️ Status da Conexão</div>
+            <div id="connectionMessage">Verificando conexão com o servidor...</div>
+        </div>
+
         <!-- HEADER -->
         <header class="header">
             <div class="logo">🎮 SchoolQuest</div>
@@ -833,8 +858,21 @@
     </div>
 
     <script>
-        // ========== CONFIGURAÇÃO DA API ==========
-        const API_BASE_URL = 'http://localhost:8000';
+        // ========== CONFIGURAÇÃO DA API - AUTO-DETECÇÃO ==========
+        const API_BASE_URL = (() => {
+            const hostname = window.location.hostname;
+            
+            // Se estiver em localhost, usa localhost
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost:8000';
+            }
+            
+            // Se estiver no Render, usa a URL do Render
+            return 'https://schoolquest-aukm.onrender.com';
+        })();
+
+        console.log('🌐 API configurada para:', API_BASE_URL);
+        console.log('🖥️ Hostname atual:', window.location.hostname);
 
         // ========== GAME MODES ========== 
         const GAME_MODES = {
@@ -863,36 +901,98 @@
             connectPairs: []
         };
 
-        // ========== API CALLS ==========
+        // ========== CONNECTION CHECK ==========
+        async function checkConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            const messageDiv = document.getElementById('connectionMessage');
+            
+            try {
+                console.log('🔍 Verificando conexão com:', `${API_BASE_URL}/api/health`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                
+                const response = await fetch(`${API_BASE_URL}/api/health`, {
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Backend conectado:', data);
+                    
+                    statusDiv.classList.add('connected');
+                    messageDiv.innerHTML = `✅ Conectado ao servidor! (${data.ai_provider.toUpperCase()})`;
+                    
+                    setTimeout(() => {
+                        statusDiv.classList.remove('active');
+                    }, 3000);
+                } else {
+                    throw new Error(`Servidor retornou: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Erro de conexão:', error);
+                
+                statusDiv.classList.add('active');
+                messageDiv.innerHTML = `
+                    ⚠️ Não foi possível conectar ao servidor.<br>
+                    <small>URL: ${API_BASE_URL}</small><br>
+                    <small>Erro: ${error.message}</small>
+                `;
+            }
+        }
+
+        // ========== API CALLS COM TIMEOUT ==========
+        async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Tempo esgotado. O servidor pode estar reiniciando.');
+                }
+                throw error;
+            }
+        }
+
         async function callProcessImage(file) {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch(`${API_BASE_URL}/api/process-image`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-image`, {
                 method: 'POST',
                 body: formData
-            });
+            }, 60000); // 60s para imagens (cold start)
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'Erro ao processar imagem');
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.detail || `Erro ${response.status}: Não foi possível processar a imagem`);
             }
 
             return await response.json();
         }
 
         async function callProcessText(text) {
-            const response = await fetch(`${API_BASE_URL}/api/process-text`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-text`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ text })
-            });
+            }, 60000); // 60s para texto (cold start)
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'Erro ao processar texto');
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.detail || `Erro ${response.status}: Não foi possível processar o texto`);
             }
 
             return await response.json();
@@ -1553,12 +1653,7 @@
 
         // ========== INIT ==========
         updateStats();
-        
-        // Testa conexão com o backend
-        fetch(`${API_BASE_URL}/api/health`)
-            .then(res => res.json())
-            .then(data => console.log('✅ Backend conectado:', data))
-            .catch(err => console.error('❌ Backend não conectado:', err));
+        checkConnection();
     </script>
 </body>
 </html>
