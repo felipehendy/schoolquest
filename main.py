@@ -128,7 +128,7 @@ def get_available_model():
         return model
     
     elif AI_PROVIDER == "openai":
-        model = "gpt-4o-mini"  # Mais barato e rápido
+        model = "gpt-4o-mini"
         print(f"✅ Usando modelo OpenAI: {model}")
         return model
 
@@ -145,7 +145,7 @@ if AI_PROVIDER == "gemini":
         "max_output_tokens": 8192,
         "response_mime_type": "application/json",
     }
-else:  # deepseek ou openai
+else:
     generation_config = {
         "temperature": 0.7,
         "max_tokens": 8192,
@@ -239,37 +239,65 @@ def validate_questions(game_data: dict):
             q["points"] = difficulty_points.get(q["difficulty"], 15)
 
 def create_game_prompt(content_description: str = "") -> str:
-    prompt = """Você é um assistente educacional especializado em criar questões de múltipla escolha divertidas e educativas para crianças de 8-9 anos.
+    if content_description:
+        # Prompt para quando há conteúdo específico (imagem ou texto)
+        prompt = f"""Você é um assistente educacional especializado em criar questões de múltipla escolha divertidas e educativas para crianças de 8-9 anos.
 
-**IMPORTANTE**: Responda APENAS com um objeto JSON válido no seguinte formato:
+**SUA TAREFA**: Analise o conteúdo abaixo e crie questões ESPECIFICAMENTE sobre os tópicos, conceitos e informações presentes nesse conteúdo.
+
+**CONTEÚDO DO DEVER DE CASA**:
+{content_description}
+
+**IMPORTANTE**: 
+- Crie questões APENAS sobre o conteúdo acima
+- Se for matemática, faça questões de matemática
+- Se for português, faça questões de português
+- Se for ciências, faça questões de ciências
+- Se for história/geografia, faça questões dessas matérias
+- Use os números, conceitos e informações EXATOS do conteúdo
+
+**FORMATO DE RESPOSTA** - Responda APENAS com um objeto JSON válido:
+
+{{
+  "questions": [
+    {{
+      "question": "Pergunta sobre o conteúdo com emoji 😊",
+      "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+      "correct": 0,
+      "explanation": "Explicação educativa",
+      "points": 15,
+      "difficulty": "médio"
+    }}
+  ]
+}}
+
+**REGRAS**:
+1. Use linguagem SIMPLES para crianças de 8-9 anos
+2. Inclua emojis nas perguntas
+3. Crie 5 a 10 questões SOBRE O CONTEÚDO ENVIADO
+4. Cada questão: exatamente 4 opções
+5. Campo "correct": número de 0 a 3
+6. Dificuldade: fácil (10 pontos), médio (15 pontos), difícil (20 pontos)
+
+**AGORA GERE O JSON** (sem texto adicional):"""
+    else:
+        # Prompt genérico caso não haja conteúdo
+        prompt = """Você é um assistente educacional. Crie 5 questões educativas variadas para crianças de 8-9 anos.
+
+Responda APENAS com JSON:
 
 {
   "questions": [
     {
-      "question": "Pergunta clara e divertida com emoji 😊",
+      "question": "Pergunta com emoji 😊",
       "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
       "correct": 0,
-      "explanation": "Explicação educativa e motivadora",
+      "explanation": "Explicação",
       "points": 15,
       "difficulty": "médio"
     }
   ]
-}
-
-**REGRAS OBRIGATÓRIAS**:
-1. Use linguagem SIMPLES e amigável para crianças
-2. Inclua emojis nas perguntas para torná-las mais divertidas
-3. Crie 5 a 10 questões variadas
-4. Cada questão deve ter exatamente 4 opções
-5. O campo "correct" deve ser um número de 0 a 3 (índice da resposta correta)
-6. A explicação deve ser motivadora e educativa
-7. Varie a dificuldade: fácil (10 pontos), médio (15 pontos), difícil (20 pontos)
-"""
-    
-    if content_description:
-        prompt += f"\n\n**CONTEÚDO A ANALISAR**:\n{content_description}\n\n"
-    
-    prompt += "\n**AGORA GERE O JSON** (sem texto adicional antes ou depois):"
+}"""
     
     return prompt
 
@@ -328,16 +356,14 @@ def call_ai_with_image(prompt: str, image_base64: str) -> str:
         return response.text
     
     elif AI_PROVIDER == "deepseek":
-        # DeepSeek não suporta visão computacional
         raise HTTPException(
             status_code=400,
             detail="❌ DeepSeek não suporta análise de imagens. Use o modo texto ou mude para Gemini/OpenAI no .env"
         )
     
     elif AI_PROVIDER == "openai":
-        # OpenAI GPT-4 Vision
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # Suporta visão
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",
@@ -375,7 +401,6 @@ async def root():
     except Exception as e:
         print(f"⚠️ Erro ao carregar index.html: {e}")
     
-    # HTML embutido caso não encontre index.html
     html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -518,9 +543,6 @@ async def cache_stats():
         "ttl_hours": api_cache.ttl / 3600
     }
 
-# =========================================================
-# PROCESSAMENTO DE IMAGEM
-# =========================================================
 @app.post("/api/process-image")
 async def process_image(file: UploadFile = File(...)):
     try:
@@ -556,7 +578,8 @@ async def process_image(file: UploadFile = File(...)):
         image.save(buffered, format="JPEG", quality=85, optimize=True)
         img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
-        prompt = create_game_prompt()
+        # Prompt instruindo a IA a analisar o que está NA IMAGEM
+        prompt = create_game_prompt("Analise esta imagem de um dever de casa e crie questões sobre o conteúdo presente na imagem.")
 
         print("🚀 Enviando para IA...")
 
@@ -585,9 +608,6 @@ async def process_image(file: UploadFile = File(...)):
             detail=f"Erro ao processar imagem: {str(e)}"
         )
 
-# =========================================================
-# PROCESSAMENTO DE TEXTO
-# =========================================================
 @app.post("/api/process-text")
 async def process_text(data: TextInput):
     try:
@@ -637,9 +657,6 @@ async def process_text(data: TextInput):
             detail=f"Erro ao processar texto: {str(e)}"
         )
 
-# =========================================================
-# ROTA DE EMBARALHAMENTO
-# =========================================================
 @app.post("/api/shuffle-questions")
 async def shuffle_questions(data: ShuffleInput):
     try:
@@ -667,13 +684,9 @@ async def shuffle_questions(data: ShuffleInput):
         traceback.print_exc()
         raise HTTPException(500, f"Erro ao embaralhar: {str(e)}")
 
-# =========================================================
-# START SERVER
-# =========================================================
 if __name__ == "__main__":
     import uvicorn
 
-    # Detecta se está no Render ou local
     port = int(os.getenv("PORT", 8000))
     
     print("\n" + "="*60)
