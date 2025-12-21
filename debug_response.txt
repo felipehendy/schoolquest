@@ -1,0 +1,68 @@
+{
+  "questions": [
+    {
+      "question": "Se o Sol fosse um super-herói, qual seria o seu superpoder principal no Sistema Solar? 😎",
+      "options": ["Dar sombra para todos", "Dar luz e calor para os planetas", "Fazer chover estrelas", "Criar anéis de fumaça"],
+      "correct": 1,
+      "explanation": "Isso mesmo! O Sol é como o nosso grande aquecedor e lâmpada espacial! Sem ele, tudo seria frio e escuro. Que poder incrível! ✨",
+      "points": 15,
+      "difficulty": "fácil"
+    },
+    {
+      "question": "Quantos amigos planetas o Sol tem girando à sua volta no Sistema Solar? 🪐",
+      "options": ["Cinco", "Sete", "Oito", "Dez"],
+      "correct": 2,
+      "explanation": "Parabéns! São 8 planetas, cada um com suas características especiais e sua própria dança no espaço. Que turma grande! 🎉",
+      "points": 15,
+      "difficulty": "fácil"
+    },
+    {
+      "question": "Qual é o planeta mais legal, onde podemos brincar e beber água fresquinha? 🌎",
+      "options": ["Marte", "Júpiter", "Terra", "Vênus"],
+      "correct": 2,
+      "explanation": "Acertou em cheio! A Terra é a nossa casa! É o único lugar que conhecemos com água líquida para a vida existir. Que sorte a nossa! 💧",
+      "points": 15,
+      "difficulty": "fácil"
+    },
+    {
+      "question": "Qual planeta parece ter pintado a cara de vermelho, por causa de uma 'ferrugem' especial? 🎨",
+      "options": ["Saturno", "Marte", "Mercúrio", "Netuno"],
+      "correct": 1,
+      "explanation": "Exatamente! Marte é conhecido como o Planeta Vermelho por causa do óxido de ferro, que é tipo uma ferrugem na sua superfície. Que curioso! 🟥",
+      "points": 15,
+      "difficulty": "fácil"
+    },
+    {
+      "question": "Se os planetas fizessem uma competição de quem é o 'grandão', quem ganharia o prêmio de MAIOR? 🏆",
+      "options": ["Terra", "Saturno", "Júpiter", "Vênus"],
+      "correct": 2,
+      "explanation": "Você é um expert! Júpiter é o gigante do Sistema Solar! Ele é tão grande que caberiam todos os outros planetas dentro dele. Uau! 🤩",
+      "points": 15,
+      "difficulty": "fácil"
+    },
+    {
+      "question": "Qual planeta é famoso por usar um 'chapéu' de anéis brilhantes, feitos de gelo e rochas? 💍",
+      "options": ["Urano", "Saturno", "Netuno", "Marte"],
+      "correct": 1,
+      "explanation": "Fantástico! Os anéis de Saturno são um espetáculo! Eles são feitos de milhões de pedacinhos de gelo e rochas que giram ao redor do planeta. Lindo, né? 🌟",
+      "points": 15,
+      "difficulty": "fácil"
+    },
+    {
+      "question": "O que forma a nossa grande 'família' do Sistema Solar? 👨‍👩‍👧‍👦",
+      "options": ["Só o Sol", "O Sol e todos os corpos celestes que giram ao redor dele", "Apenas os planetas", "Estrelas distantes"],
+      "correct": 1,
+      "explanation": "Isso mesmo! A família do Sistema Solar é enorme! Inclui o Sol, os planetas, e muitos outros objetos que dançam juntos no espaço. Que legal! 🚀",
+      "points": 15,
+      "difficulty": "fácil"
+    },
+    {
+      "question": "O Sol é uma estrela ou um planeta? ✨",
+      "options": ["Um planeta pequeno", "Uma estrela muito grande", "Um cometa brilhante", "Um asteroide gigante"],
+      "correct": 1,
+      "explanation": "Você acertou! O Sol é uma estrela! E é enorme! Ele brilha e nos aquece com sua própria luz e calor. É o centro do nosso universo local! 🔥",
+      "points": 15,
+      "difficulty": "fácil"
+    }
+  ]
+}
