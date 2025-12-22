@@ -16,10 +16,9 @@ from pathlib import Path
 import hashlib
 import time
 from openai import OpenAI
-# Importação correta do PyJWT
 import jwt
 from datetime import datetime, timedelta
-from typing import Optional, Any
+from typing import Optional
 
 # =========================================================
 # CARREGAMENTO DE VARIÁVEIS
@@ -70,9 +69,8 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         raise HTTPException(status_code=401, detail="Token expirado")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido")
-    except jwt.PyJWTError: # Adicionado para capturar outros erros do PyJWT
-        raise HTTPException(status_code=401, detail="Token inválido")
     
+
     
 
 def get_optional_user(
@@ -87,6 +85,7 @@ def get_optional_user(
         return payload.get("username", "guest")
     except jwt.PyJWTError:
         return "guest"
+
 
 
 # =========================================================
@@ -206,23 +205,17 @@ def safe_json_parse(text: str):
         raise ValueError(f"Resposta da IA não é um JSON válido. Erro: {str(e)}")
 
 def validate_questions(game_data: dict):
-    # O erro 422 estava aqui, pois o Pydantic do FastAPI não estava sendo usado
-    # para validar a estrutura da resposta da IA.
-    # A validação manual é OK, mas precisa ser robusta.
-    
     if "questions" not in game_data or not game_data["questions"]:
-        raise ValueError("Nenhuma questão foi gerada ou a chave 'questions' está faltando.")
+        raise ValueError("Nenhuma questão foi gerada")
 
     if len(game_data["questions"]) > 10:
         game_data["questions"] = game_data["questions"][:10]
 
     for i, q in enumerate(game_data["questions"]):
-        # A validação exige 'correct' e 'explanation', que são os campos que estavam faltando.
         required = ["question", "options", "correct", "explanation"]
         missing = [field for field in required if field not in q]
         
         if missing:
-            # Esta é a mensagem de erro que você viu no log!
             raise ValueError(f"Questão {i+1} está faltando: {', '.join(missing)}")
 
         if not isinstance(q["options"], list) or len(q["options"]) != 4:
@@ -240,7 +233,7 @@ def validate_questions(game_data: dict):
 
 def create_game_prompt(content_description: str = "") -> str:
     if content_description:
-        prompt = f"""Você é um PROFESSOR PEDAGOGO ESPECIALISTA em ensino infantil (8 a 10 anos),
+        prompt = f"""ê é um PROFESSOR PEDAGOGO ESPECIALISTA em ensino infantil (8 a 10 anos),
 com foco em aprendizagem ativa, raciocínio lógico, criatividade e gamificação.
 
 Você trabalha para uma plataforma educacional chamada SCHOOLQUEST,
@@ -303,7 +296,7 @@ Matérias possíveis:
   • fatos históricos
   • personagens
   • datas importantes
-  • Sempre contextualizadas
+- Sempre contextualizadas
 
 📒 SE A MATÉRIA FOR **GEOGRAFIA**:
 - Trabalhe:
@@ -340,108 +333,169 @@ Cada pergunta deve conter:
 
 Retorne SOMENTE JSON, sem texto explicativo.
 
-O JSON DEVE ter a seguinte estrutura OBRIGATÓRIA:
+Formato obrigatório:
 
-```json
+{{
+  "subject": "Matemática",
+  "questions": [
+    {{
+      "question": "Pergunta aqui",
+      "options": ["A", "B", "C", "D"],
+      "answer": "A"
+    }}
+  ]
+}}
+
+══════════════════════════════════════
+📚 CONTEÚDO BASE DO ALUNO
+══════════════════════════════════════
+
+**FORMATO DE RESPOSTA** - Responda APENAS com um objeto JSON válido:
+
+{{
+  "questions": [
+    {{
+      "question": "Pergunta sobre o conteúdo com emoji 😊",
+      "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+      "correct": 0,
+      "explanation": "Explicação educativa",
+      "points": 15,
+      "difficulty": "médio"
+    }}
+  ]
+}}
+
+**REGRAS**:
+1. Use linguagem SIMPLES para crianças de 8-9 anos
+2. Inclua emojis nas perguntas
+3. Crie 10 a 20 questões SOBRE O CONTEÚDO ENVIADO
+4. Cada questão: exatamente 4 opções
+5. Campo "correct": número de 0 a 3
+6. Dificuldade: fácil (10 pontos), médio (15 pontos), difícil (20 pontos)
+
+**AGORA GERE O JSON** (sem texto adicional):"""
+    else:
+        prompt = """Você é um assistente educacional. Crie de 10 -20 questões educativas variadas para crianças de 8-9 anos.
+
+Responda APENAS com JSON:
+
 {
-  "subject": "Matéria identificada na ETAPA 1",
   "questions": [
     {
-      "question": "Enunciado da pergunta",
-      "options": [
-        "Opção A",
-        "Opção B",
-        "Opção C",
-        "Opção D"
-      ],
-      "correct": 0, // Índice da opção correta (0 a 3)
-      "explanation": "Explicação detalhada de por que a opção 'correct' está certa e as outras erradas. Use linguagem pedagógica.",
-      "difficulty": "fácil" // ou "médio" ou "difícil"
+      "question": "Pergunta com emoji 😊",
+      "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+      "correct": 0,
+      "explanation": "Explicação",
+      "points": 15,
+      "difficulty": "médio"
     }
-    // ... mais 4 questões
   ]
-}
-```
-"""
+}"""
+    
     return prompt
 
 # =========================================================
-# FUNÇÕES DE CHAMADA À API (ADICIONADAS)
+# FUNÇÕES DE CHAMADA À IA (OPENAI)
 # =========================================================
-
 def call_ai_with_text(prompt: str) -> str:
-    """Chama a API do OpenAI com um prompt de texto."""
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": "Você é um assistente que retorna JSON estrito."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=generation_config["temperature"],
-            response_format={"type": "json_object"} # Força a saída em JSON
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"Erro na chamada da API de texto: {e}")
-        raise
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=generation_config["temperature"],
+        max_tokens=generation_config["max_tokens"]
+    )
+    return response.choices[0].message.content
 
 def call_ai_with_image(prompt: str, image_base64: str) -> str:
-    """Chama a API do OpenAI com um prompt e uma imagem em base64."""
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": "Você é um assistente que retorna JSON estrito."},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_base64}"
-                            }
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_base64}"
                         }
-                    ]
-                }
-            ],
-            temperature=generation_config["temperature"],
-            response_format={"type": "json_object"} # Força a saída em JSON
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"Erro na chamada da API de imagem: {e}")
-        raise
+                    }
+                ]
+            }
+        ],
+        temperature=generation_config["temperature"],
+        max_tokens=generation_config["max_tokens"]
+    )
+    return response.choices[0].message.content
 
 # =========================================================
-# ROTAS DA API
+# ROTAS
 # =========================================================
-
 @app.get("/")
 async def root():
-    # CORREÇÃO FINAL: Redireciona para o arquivo dentro da pasta static
-    return RedirectResponse(url="/static/login.html")
+    """Redireciona para a página de login"""
+    return RedirectResponse(url="/login.html")
 
+@app.get("/login.html")
+async def serve_login():
+    """Serve a página de login"""
+    try:
+        with open("login.html", "r", encoding="utf-8") as f:
+            content = f.read()
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(content=content)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Arquivo login.html não encontrado")
+
+@app.get("/register.html")
+async def serve_register():
+    """Serve a página de registro"""
+    try:
+        with open("register.html", "r", encoding="utf-8") as f:
+            content = f.read()
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(content=content)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Arquivo register.html não encontrado")
+
+@app.get("/index.html")
+async def serve_index():
+    """Serve a página principal do jogo"""
+    try:
+        with open("index.html", "r", encoding="utf-8") as f:
+            content = f.read()
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(content=content)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Arquivo index.html não encontrado")
+
+# =========================================================
+# ROTAS DE AUTENTICAÇÃO
+# =========================================================
 @app.post("/api/auth/register")
 async def register(data: RegisterInput):
+    if len(data.username) < 3:
+        raise HTTPException(400, "Usuário deve ter pelo menos 3 caracteres")
+    
+    if len(data.password) < 4:
+        raise HTTPException(400, "Senha deve ter pelo menos 4 caracteres")
+    
     if data.username in users_db:
         raise HTTPException(400, "Usuário já existe")
     
+    # Hash simples da senha (em produção, use bcrypt!)
     password_hash = hashlib.sha256(data.password.encode()).hexdigest()
     
     users_db[data.username] = {
         "password": password_hash,
         "email": data.email,
-        "created_at": datetime.now().isoformat()
+        "created_at": datetime.utcnow().isoformat()
     }
-    
-    token = create_token(data.username)
     
     print(f"✅ Novo usuário registrado: {data.username}")
     
     return {
-        "token": token,
+        "message": "Usuário criado com sucesso",
         "username": data.username
     }
 
@@ -614,7 +668,6 @@ async def process_text(
             f"**Conteúdo do dever de casa**:\n\n{data.text}"
         )
 
-        # Chamada corrigida para a nova função
         response_text = call_ai_with_text(prompt)
 
         game_data = safe_json_parse(response_text)
@@ -676,7 +729,7 @@ if __name__ == "__main__":
     print(f"📦 Modelo ativo: {MODEL_NAME}")
     print(f"🔐 Autenticação: Habilitada")
     print("💾 Cache: Ativado (24 horas)")
-    print("🔒 CORS: Habilitada")
+    print("🔒 CORS: Habilitado")
     print("="*60)
     print(f"📡 Servidor: http://0.0.0.0:{port}")
     print("🏠 Página inicial: / (redireciona para login)")
