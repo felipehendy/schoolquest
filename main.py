@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -52,7 +52,6 @@ users_db = {}
 # =========================================================
 security = HTTPBearer(auto_error=False)
 
-
 def create_token(username: str) -> str:
     payload = {
         "username": username,
@@ -61,6 +60,9 @@ def create_token(username: str) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Token não fornecido")
+    
     try:
         token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
@@ -69,24 +71,18 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         raise HTTPException(status_code=401, detail="Token expirado")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido")
-    
 
-    
-
-def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-):
+def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Permite acesso com ou sem autenticação (modo visitante)"""
     if credentials is None:
         return "guest"
-
+    
     try:
         token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         return payload.get("username", "guest")
     except jwt.PyJWTError:
         return "guest"
-
-
 
 # =========================================================
 # CACHE SIMPLES EM MEMÓRIA
@@ -146,9 +142,8 @@ app.add_middleware(
 )
 
 # =========================================================
-# SERVIR ARQUIVOS ESTÁTICOS (HTML, CSS, JS)
+# SERVIR ARQUIVOS ESTÁTICOS
 # =========================================================
-# Verifica se existe pasta static e monta ela
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -173,6 +168,21 @@ class ShuffleInput(BaseModel):
 # =========================================================
 # FUNÇÕES UTILITÁRIAS
 # =========================================================
+def get_html_file(filename: str) -> HTMLResponse:
+    """Busca arquivo HTML na raiz ou na pasta static (compatível com Render)"""
+    # Tenta primeiro na raiz (desenvolvimento local)
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    
+    # Tenta na pasta static (Render)
+    static_path = os.path.join("static", filename)
+    if os.path.exists(static_path):
+        with open(static_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    
+    raise HTTPException(status_code=404, detail=f"Arquivo {filename} não encontrado")
+
 def generate_cache_key(content: str, content_type: str = "text") -> str:
     content_hash = hashlib.md5(content.encode()).hexdigest()
     return f"openai_{content_type}_{content_hash}"
@@ -208,8 +218,8 @@ def validate_questions(game_data: dict):
     if "questions" not in game_data or not game_data["questions"]:
         raise ValueError("Nenhuma questão foi gerada")
 
-    if len(game_data["questions"]) > 10:
-        game_data["questions"] = game_data["questions"][:10]
+    if len(game_data["questions"]) > 20:
+        game_data["questions"] = game_data["questions"][:20]
 
     for i, q in enumerate(game_data["questions"]):
         required = ["question", "options", "correct", "explanation"]
@@ -233,12 +243,11 @@ def validate_questions(game_data: dict):
 
 def create_game_prompt(content_description: str = "") -> str:
     if content_description:
-        prompt = f"""ê é um PROFESSOR PEDAGOGO ESPECIALISTA em ensino infantil (8 a 10 anos),
+        prompt = f"""Você é um PROFESSOR PEDAGOGO ESPECIALISTA em ensino infantil (8 a 10 anos),
 com foco em aprendizagem ativa, raciocínio lógico, criatividade e gamificação.
 
 Você trabalha para uma plataforma educacional chamada SCHOOLQUEST,
 onde o aprendizado acontece por meio de DESAFIOS e JOGOS.
-{content_description}
 
 ══════════════════════════════════════
 🎯 ETAPA 1 — IDENTIFICAÇÃO DA MATÉRIA
@@ -263,121 +272,72 @@ Matérias possíveis:
 - NÃO conte letras ou palavras
 - CRIE CÁLCULOS NOVOS, mesmo que o texto não tenha números
 - Use obrigatoriamente:
-  • soma
-  • subtração
-  • multiplicação
-  • divisão simples
+  • soma, subtração, multiplicação, divisão simples
 - Crie situações do cotidiano infantil:
-  • dinheiro
-  • brinquedos
-  • frutas
-  • tempo
-  • escola
+  • dinheiro, brinquedos, frutas, tempo, escola
 - Exija raciocínio lógico e cálculo mental
 
 📗 SE A MATÉRIA FOR **PORTUGUÊS**:
-- Trabalhe:
-  • interpretação de texto
-  • ortografia
-  • sinônimos e antônimos
-  • gramática básica
+- Trabalhe: interpretação de texto, ortografia, sinônimos e antônimos, gramática básica
 - Pode criar exemplos novos além do texto
 
 📙 SE A MATÉRIA FOR **CIÊNCIAS**:
-- Use perguntas sobre:
-  • corpo humano
-  • natureza
-  • animais
-  • meio ambiente
+- Use perguntas sobre: corpo humano, natureza, animais, meio ambiente
 - Linguagem simples e educativa
 
 📕 SE A MATÉRIA FOR **HISTÓRIA**:
-- Perguntas sobre:
-  • fatos históricos
-  • personagens
-  • datas importantes
+- Perguntas sobre: fatos históricos, personagens, datas importantes
 - Sempre contextualizadas
 
 📒 SE A MATÉRIA FOR **GEOGRAFIA**:
-- Trabalhe:
-  • mapas
-  • países
-  • estados
-  • clima
-  • natureza
+- Trabalhe: mapas, países, estados, clima, natureza
 - Use exemplos do cotidiano
 
 📔 SE A MATÉRIA FOR **INGLÊS**:
 - Use palavras simples
-- Trabalhe:
-  • cores
-  • números
-  • animais
-  • objetos
+- Trabalhe: cores, números, animais, objetos
 - Pode misturar português + inglês
 
 ══════════════════════════════════════
-🎯 ETAPA 3 — FORMATO OBRIGATÓRIO
+📚 CONTEÚDO DO ALUNO
 ══════════════════════════════════════
-
-Crie EXATAMENTE 5 perguntas de múltipla escolha.
-
-Cada pergunta deve conter:
-- enunciado claro
-- 4 alternativas (A, B, C, D)
-- apenas 1 alternativa correta
+{content_description}
 
 ══════════════════════════════════════
-🎯 ETAPA 4 — FORMATO DE SAÍDA (JSON PURO)
+🎯 FORMATO DE SAÍDA (JSON PURO)
 ══════════════════════════════════════
 
-Retorne SOMENTE JSON, sem texto explicativo.
+Retorne SOMENTE JSON válido, sem texto explicativo antes ou depois.
 
-Formato obrigatório:
-
-{{
-  "subject": "Matemática",
-  "questions": [
-    {{
-      "question": "Pergunta aqui",
-      "options": ["A", "B", "C", "D"],
-      "answer": "A"
-    }}
-  ]
-}}
-
-══════════════════════════════════════
-📚 CONTEÚDO BASE DO ALUNO
-══════════════════════════════════════
-
-**FORMATO DE RESPOSTA** - Responda APENAS com um objeto JSON válido:
+**FORMATO OBRIGATÓRIO**:
 
 {{
   "questions": [
     {{
-      "question": "Pergunta sobre o conteúdo com emoji 😊",
+      "question": "Pergunta com emoji 😊",
       "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
       "correct": 0,
-      "explanation": "Explicação educativa",
+      "explanation": "Explicação educativa clara",
       "points": 15,
       "difficulty": "médio"
     }}
   ]
 }}
 
-**REGRAS**:
-1. Use linguagem SIMPLES para crianças de 8-9 anos
-2. Inclua emojis nas perguntas
-3. Crie 10 a 20 questões SOBRE O CONTEÚDO ENVIADO
+**REGRAS FINAIS**:
+1. Use linguagem SIMPLES para crianças de 8-10 anos
+2. Inclua emojis nas perguntas para deixar divertido
+3. Crie entre 10 a 20 questões SOBRE O CONTEÚDO ENVIADO
 4. Cada questão: exatamente 4 opções
-5. Campo "correct": número de 0 a 3
-6. Dificuldade: fácil (10 pontos), médio (15 pontos), difícil (20 pontos)
+5. Campo "correct": número de 0 a 3 (índice da resposta correta)
+6. Dificuldade: "fácil" (10 pontos), "médio" (15 pontos), "difícil" (20 pontos)
+7. Explicação: clara, educativa e encorajadora
 
-**AGORA GERE O JSON** (sem texto adicional):"""
+**AGORA GERE O JSON**:"""
     else:
-        prompt = """Você é um assistente educacional. Crie de 10 -20 questões educativas variadas para crianças de 8-9 anos.
+        prompt = """Você é um assistente educacional. Crie 10 questões educativas variadas para crianças de 8-10 anos.
 
-Responda APENAS com JSON:
+Responda APENAS com JSON válido:
 
 {
   "questions": [
@@ -385,7 +345,7 @@ Responda APENAS com JSON:
       "question": "Pergunta com emoji 😊",
       "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
       "correct": 0,
-      "explanation": "Explicação",
+      "explanation": "Explicação clara e educativa",
       "points": 15,
       "difficulty": "médio"
     }
@@ -429,7 +389,7 @@ def call_ai_with_image(prompt: str, image_base64: str) -> str:
     return response.choices[0].message.content
 
 # =========================================================
-# ROTAS
+# ROTAS PRINCIPAIS
 # =========================================================
 @app.get("/")
 async def root():
@@ -439,35 +399,17 @@ async def root():
 @app.get("/login.html")
 async def serve_login():
     """Serve a página de login"""
-    try:
-        with open("login.html", "r", encoding="utf-8") as f:
-            content = f.read()
-        from fastapi.responses import HTMLResponse
-        return HTMLResponse(content=content)
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Arquivo login.html não encontrado")
+    return get_html_file("login.html")
 
 @app.get("/register.html")
 async def serve_register():
     """Serve a página de registro"""
-    try:
-        with open("register.html", "r", encoding="utf-8") as f:
-            content = f.read()
-        from fastapi.responses import HTMLResponse
-        return HTMLResponse(content=content)
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Arquivo register.html não encontrado")
+    return get_html_file("register.html")
 
 @app.get("/index.html")
 async def serve_index():
     """Serve a página principal do jogo"""
-    try:
-        with open("index.html", "r", encoding="utf-8") as f:
-            content = f.read()
-        from fastapi.responses import HTMLResponse
-        return HTMLResponse(content=content)
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Arquivo index.html não encontrado")
+    return get_html_file("index.html")
 
 # =========================================================
 # ROTAS DE AUTENTICAÇÃO
@@ -483,7 +425,6 @@ async def register(data: RegisterInput):
     if data.username in users_db:
         raise HTTPException(400, "Usuário já existe")
     
-    # Hash simples da senha (em produção, use bcrypt!)
     password_hash = hashlib.sha256(data.password.encode()).hexdigest()
     
     users_db[data.username] = {
@@ -529,6 +470,9 @@ async def get_current_user(username: str = Depends(verify_token)):
         "created_at": users_db[username].get("created_at")
     }
 
+# =========================================================
+# ROTAS DE MONITORAMENTO
+# =========================================================
 @app.get("/api/health")
 async def health():
     api_cache.clear_old()
@@ -546,7 +490,8 @@ async def health():
         "features": {
             "text_processing": True,
             "image_processing": True,
-            "authentication": True
+            "authentication": True,
+            "guest_mode": True
         }
     }
 
@@ -556,7 +501,7 @@ async def clear_cache(username: str = Depends(verify_token)):
     api_cache.cache.clear()
     return {
         "status": "ok",
-        "message": f"Cache limpo com sucesso!",
+        "message": "Cache limpo com sucesso!",
         "entries_removed": entries
     }
 
@@ -577,6 +522,9 @@ async def cache_stats():
         "ttl_hours": api_cache.ttl / 3600
     }
 
+# =========================================================
+# ROTAS DE PROCESSAMENTO
+# =========================================================
 @app.post("/api/process-image")
 async def process_image(file: UploadFile = File(...), username: str = Depends(verify_token)):
     try:
@@ -643,10 +591,8 @@ async def process_image(file: UploadFile = File(...), username: str = Depends(ve
         )
 
 @app.post("/api/process-text")
-async def process_text(
-    data: TextInput,
-    username: str = Depends(get_optional_user)
-):
+async def process_text(data: TextInput, username: str = Depends(get_optional_user)):
+    """Permite processamento com ou sem autenticação (modo visitante)"""
     try:
         print(f"\n{'='*60}")
         print(f"📝 Processando texto ({len(data.text)} caracteres)")
@@ -664,14 +610,20 @@ async def process_text(
             print("✅ Resultado recuperado do cache (tokens economizados!)")
             return JSONResponse(content=cached_result)
 
-        prompt = create_game_prompt(
-            f"**Conteúdo do dever de casa**:\n\n{data.text}"
-        )
+        print("📄 Processando texto (primeira vez)...")
+
+        prompt = create_game_prompt(f"**Conteúdo do dever de casa**:\n\n{data.text}")
+
+        print("🚀 Enviando para OpenAI...")
 
         response_text = call_ai_with_text(prompt)
+        
+        print(f"✅ Resposta recebida ({len(response_text)} caracteres)")
 
         game_data = safe_json_parse(response_text)
         validate_questions(game_data)
+        
+        print(f"✅ {len(game_data['questions'])} questões geradas com sucesso!")
 
         api_cache.set(cache_key, game_data)
 
@@ -688,7 +640,6 @@ async def process_text(
             status_code=500,
             detail=f"Erro ao processar texto: {str(e)}"
         )
-
 
 @app.post("/api/shuffle-questions")
 async def shuffle_questions(data: ShuffleInput, username: str = Depends(verify_token)):
@@ -717,6 +668,9 @@ async def shuffle_questions(data: ShuffleInput, username: str = Depends(verify_t
         traceback.print_exc()
         raise HTTPException(500, f"Erro ao embaralhar: {str(e)}")
 
+# =========================================================
+# INICIALIZAÇÃO DO SERVIDOR
+# =========================================================
 if __name__ == "__main__":
     import uvicorn
 
@@ -728,11 +682,12 @@ if __name__ == "__main__":
     print(f"🤖 Provedor de IA: OPENAI")
     print(f"📦 Modelo ativo: {MODEL_NAME}")
     print(f"🔐 Autenticação: Habilitada")
+    print(f"👻 Modo Visitante: Habilitado (process-text)")
     print("💾 Cache: Ativado (24 horas)")
     print("🔒 CORS: Habilitado")
     print("="*60)
     print(f"📡 Servidor: http://0.0.0.0:{port}")
-    print("🏠 Página inicial: / (redireciona para login)")
+    print("🏠 Página inicial: / → redireciona para /login.html")
     print("📘 Documentação API: /docs")
     print("🏥 Health check: /api/health")
     print("="*60 + "\n")
