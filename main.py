@@ -1,6 +1,8 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
@@ -14,6 +16,9 @@ from pathlib import Path
 import hashlib
 import time
 from openai import OpenAI
+import jwt
+from datetime import datetime, timedelta
+from typing import Optional
 
 # =========================================================
 # CARREGAMENTO DE VARIÁVEIS
@@ -21,6 +26,7 @@ from openai import OpenAI
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "sua-chave-secreta-super-segura-mude-isso")
 
 if not OPENAI_API_KEY:
     raise ValueError("❌ OPENAI_API_KEY não encontrada no arquivo .env")
@@ -33,9 +39,54 @@ print("\n🤖 Provedor de IA: OPENAI")
 client = OpenAI(api_key=OPENAI_API_KEY)
 print("✅ Cliente OpenAI inicializado")
 
-# Modelo mais poderoso da OpenAI
 MODEL_NAME = "gpt-4o"
 print(f"✅ Usando modelo: {MODEL_NAME} 🏆")
+
+# =========================================================
+# BANCO DE DADOS SIMPLES (EM MEMÓRIA)
+# =========================================================
+users_db = {}
+
+# =========================================================
+# SEGURANÇA
+# =========================================================
+security = HTTPBearer(auto_error=False)
+
+
+def create_token(username: str) -> str:
+    payload = {
+        "username": username,
+        "exp": datetime.utcnow() + timedelta(days=7)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload["username"]
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expirado")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+
+    
+
+def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+):
+    if credentials is None:
+        return "guest"
+
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload.get("username", "guest")
+    except jwt.PyJWTError:
+        return "guest"
+
+
 
 # =========================================================
 # CACHE SIMPLES EM MEMÓRIA
@@ -82,8 +133,8 @@ generation_config = {
 # =========================================================
 app = FastAPI(
     title="SchoolQuest API",
-    version="3.0.0",
-    description="API gamificada com OpenAI"
+    version="4.0.0",
+    description="API gamificada com OpenAI e autenticação"
 )
 
 app.add_middleware(
@@ -95,8 +146,24 @@ app.add_middleware(
 )
 
 # =========================================================
+# SERVIR ARQUIVOS ESTÁTICOS (HTML, CSS, JS)
+# =========================================================
+# Verifica se existe pasta static e monta ela
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# =========================================================
 # MODELOS
 # =========================================================
+class LoginInput(BaseModel):
+    username: str
+    password: str
+
+class RegisterInput(BaseModel):
+    username: str
+    password: str
+    email: str = None
+
 class TextInput(BaseModel):
     text: str
 
@@ -166,20 +233,122 @@ def validate_questions(game_data: dict):
 
 def create_game_prompt(content_description: str = "") -> str:
     if content_description:
-        prompt = f"""Você é um assistente educacional especializado em criar questões de múltipla escolha divertidas e educativas para crianças de 8-9 anos.
+        prompt = f"""ê é um PROFESSOR PEDAGOGO ESPECIALISTA em ensino infantil (8 a 10 anos),
+com foco em aprendizagem ativa, raciocínio lógico, criatividade e gamificação.
 
-**SUA TAREFA**: Analise o conteúdo abaixo e crie questões ESPECIFICAMENTE sobre os tópicos, conceitos e informações presentes nesse conteúdo.
-
-**CONTEÚDO DO DEVER DE CASA**:
+Você trabalha para uma plataforma educacional chamada SCHOOLQUEST,
+onde o aprendizado acontece por meio de DESAFIOS e JOGOS.
 {content_description}
 
-**IMPORTANTE**: 
-- Crie questões APENAS sobre o conteúdo acima
-- Se for matemática, faça questões de matemática
-- Se for português, faça questões de português
-- Se for ciências, faça questões de ciências
-- Se for história/geografia, faça questões dessas matérias
-- Use os números, conceitos e informações EXATOS do conteúdo
+══════════════════════════════════════
+🎯 ETAPA 1 — IDENTIFICAÇÃO DA MATÉRIA
+══════════════════════════════════════
+Analise o conteúdo abaixo e IDENTIFIQUE AUTOMATICAMENTE a matéria principal.
+
+Matérias possíveis:
+- Matemática
+- Português
+- Ciências
+- História
+- Geografia
+- Inglês
+- Conhecimentos Gerais
+
+══════════════════════════════════════
+🎯 ETAPA 2 — REGRAS POR MATÉRIA
+══════════════════════════════════════
+
+📘 SE A MATÉRIA FOR **MATEMÁTICA**:
+- NÃO faça perguntas de interpretação de texto
+- NÃO conte letras ou palavras
+- CRIE CÁLCULOS NOVOS, mesmo que o texto não tenha números
+- Use obrigatoriamente:
+  • soma
+  • subtração
+  • multiplicação
+  • divisão simples
+- Crie situações do cotidiano infantil:
+  • dinheiro
+  • brinquedos
+  • frutas
+  • tempo
+  • escola
+- Exija raciocínio lógico e cálculo mental
+
+📗 SE A MATÉRIA FOR **PORTUGUÊS**:
+- Trabalhe:
+  • interpretação de texto
+  • ortografia
+  • sinônimos e antônimos
+  • gramática básica
+- Pode criar exemplos novos além do texto
+
+📙 SE A MATÉRIA FOR **CIÊNCIAS**:
+- Use perguntas sobre:
+  • corpo humano
+  • natureza
+  • animais
+  • meio ambiente
+- Linguagem simples e educativa
+
+📕 SE A MATÉRIA FOR **HISTÓRIA**:
+- Perguntas sobre:
+  • fatos históricos
+  • personagens
+  • datas importantes
+- Sempre contextualizadas
+
+📒 SE A MATÉRIA FOR **GEOGRAFIA**:
+- Trabalhe:
+  • mapas
+  • países
+  • estados
+  • clima
+  • natureza
+- Use exemplos do cotidiano
+
+📔 SE A MATÉRIA FOR **INGLÊS**:
+- Use palavras simples
+- Trabalhe:
+  • cores
+  • números
+  • animais
+  • objetos
+- Pode misturar português + inglês
+
+══════════════════════════════════════
+🎯 ETAPA 3 — FORMATO OBRIGATÓRIO
+══════════════════════════════════════
+
+Crie EXATAMENTE 5 perguntas de múltipla escolha.
+
+Cada pergunta deve conter:
+- enunciado claro
+- 4 alternativas (A, B, C, D)
+- apenas 1 alternativa correta
+
+══════════════════════════════════════
+🎯 ETAPA 4 — FORMATO DE SAÍDA (JSON PURO)
+══════════════════════════════════════
+
+Retorne SOMENTE JSON, sem texto explicativo.
+
+Formato obrigatório:
+
+{{
+  "subject": "Matemática",
+  "questions": [
+    {{
+      "question": "Pergunta aqui",
+      "options": ["A", "B", "C", "D"],
+      "answer": "A"
+    }}
+  ]
+}}
+
+══════════════════════════════════════
+📚 CONTEÚDO BASE DO ALUNO
+══════════════════════════════════════
 
 **FORMATO DE RESPOSTA** - Responda APENAS com um objeto JSON válido:
 
@@ -199,14 +368,14 @@ def create_game_prompt(content_description: str = "") -> str:
 **REGRAS**:
 1. Use linguagem SIMPLES para crianças de 8-9 anos
 2. Inclua emojis nas perguntas
-3. Crie 5 a 10 questões SOBRE O CONTEÚDO ENVIADO
+3. Crie 10 a 20 questões SOBRE O CONTEÚDO ENVIADO
 4. Cada questão: exatamente 4 opções
 5. Campo "correct": número de 0 a 3
 6. Dificuldade: fácil (10 pontos), médio (15 pontos), difícil (20 pontos)
 
 **AGORA GERE O JSON** (sem texto adicional):"""
     else:
-        prompt = """Você é um assistente educacional. Crie 5 questões educativas variadas para crianças de 8-9 anos.
+        prompt = """Você é um assistente educacional. Crie de 10 -20 questões educativas variadas para crianças de 8-9 anos.
 
 Responda APENAS com JSON:
 
@@ -229,7 +398,6 @@ Responda APENAS com JSON:
 # FUNÇÕES DE CHAMADA À IA (OPENAI)
 # =========================================================
 def call_ai_with_text(prompt: str) -> str:
-    """Chama a OpenAI com texto"""
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[{"role": "user", "content": prompt}],
@@ -239,7 +407,6 @@ def call_ai_with_text(prompt: str) -> str:
     return response.choices[0].message.content
 
 def call_ai_with_image(prompt: str, image_base64: str) -> str:
-    """Chama a OpenAI com imagem"""
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
@@ -264,112 +431,103 @@ def call_ai_with_image(prompt: str, image_base64: str) -> str:
 # =========================================================
 # ROTAS
 # =========================================================
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def root():
+    """Redireciona para a página de login"""
+    return RedirectResponse(url="/login.html")
+
+@app.get("/login.html")
+async def serve_login():
+    """Serve a página de login"""
     try:
-        index_path = Path("index.html")
-        if index_path.exists():
-            with open(index_path, "r", encoding="utf-8") as f:
-                return HTMLResponse(content=f.read())
-        
-        index_path = Path("static/index.html")
-        if index_path.exists():
-            with open(index_path, "r", encoding="utf-8") as f:
-                return HTMLResponse(content=f.read())
-    except Exception as e:
-        print(f"⚠️ Erro ao carregar index.html: {e}")
+        with open("login.html", "r", encoding="utf-8") as f:
+            content = f.read()
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(content=content)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Arquivo login.html não encontrado")
+
+@app.get("/register.html")
+async def serve_register():
+    """Serve a página de registro"""
+    try:
+        with open("register.html", "r", encoding="utf-8") as f:
+            content = f.read()
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(content=content)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Arquivo register.html não encontrado")
+
+@app.get("/index.html")
+async def serve_index():
+    """Serve a página principal do jogo"""
+    try:
+        with open("index.html", "r", encoding="utf-8") as f:
+            content = f.read()
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(content=content)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Arquivo index.html não encontrado")
+
+# =========================================================
+# ROTAS DE AUTENTICAÇÃO
+# =========================================================
+@app.post("/api/auth/register")
+async def register(data: RegisterInput):
+    if len(data.username) < 3:
+        raise HTTPException(400, "Usuário deve ter pelo menos 3 caracteres")
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>SchoolQuest API</title>
-        <style>
-            body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                max-width: 800px;
-                margin: 50px auto;
-                padding: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-            }}
-            .container {{
-                background: white;
-                color: #2D3748;
-                border-radius: 20px;
-                padding: 40px;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            }}
-            h1 {{ color: #667eea; margin-bottom: 10px; }}
-            .status {{ color: #06D6A0; font-weight: bold; font-size: 20px; }}
-            .provider {{ 
-                background: linear-gradient(135deg, #10a37f, #1a7f64);
-                color: white;
-                padding: 15px;
-                border-radius: 10px;
-                margin: 20px 0;
-                text-align: center;
-                font-size: 24px;
-                font-weight: bold;
-            }}
-            .endpoint {{ 
-                background: #F7FAFC; 
-                padding: 15px; 
-                margin: 10px 0; 
-                border-radius: 10px;
-                border-left: 4px solid #10a37f;
-            }}
-            a {{ color: #10a37f; text-decoration: none; font-weight: bold; }}
-            a:hover {{ text-decoration: underline; }}
-            code {{ 
-                background: #2D3748; 
-                color: #06D6A0; 
-                padding: 2px 8px; 
-                border-radius: 4px;
-                font-family: monospace;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🎮 SchoolQuest API v3.0.0</h1>
-            <p class="status">✅ Backend Online e Funcionando!</p>
-            
-            <div class="provider">
-                🤖 OpenAI - {MODEL_NAME}
-            </div>
-            
-            <h2>📚 Endpoints Disponíveis:</h2>
-            
-            <div class="endpoint">
-                <strong>📘 Documentação Interativa:</strong><br>
-                <a href="/docs" target="_blank">/docs</a>
-            </div>
-            
-            <div class="endpoint">
-                <strong>🏥 Health Check:</strong><br>
-                <a href="/api/health" target="_blank">/api/health</a>
-            </div>
-            
-            <div class="endpoint">
-                <strong>🖼️ Processar Imagem:</strong><br>
-                <code>POST /api/process-image</code>
-            </div>
-            
-            <div class="endpoint">
-                <strong>📝 Processar Texto:</strong><br>
-                <code>POST /api/process-text</code>
-            </div>
-            
-            <div class="endpoint">
-                <strong>📊 Estatísticas do Cache:</strong><br>
-                <a href="/api/cache/stats" target="_blank">/api/cache/stats</a>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+    if len(data.password) < 4:
+        raise HTTPException(400, "Senha deve ter pelo menos 4 caracteres")
+    
+    if data.username in users_db:
+        raise HTTPException(400, "Usuário já existe")
+    
+    # Hash simples da senha (em produção, use bcrypt!)
+    password_hash = hashlib.sha256(data.password.encode()).hexdigest()
+    
+    users_db[data.username] = {
+        "password": password_hash,
+        "email": data.email,
+        "created_at": datetime.utcnow().isoformat()
+    }
+    
+    print(f"✅ Novo usuário registrado: {data.username}")
+    
+    return {
+        "message": "Usuário criado com sucesso",
+        "username": data.username
+    }
+
+@app.post("/api/auth/login")
+async def login(data: LoginInput):
+    if data.username not in users_db:
+        raise HTTPException(401, "Usuário ou senha incorretos")
+    
+    password_hash = hashlib.sha256(data.password.encode()).hexdigest()
+    
+    if users_db[data.username]["password"] != password_hash:
+        raise HTTPException(401, "Usuário ou senha incorretos")
+    
+    token = create_token(data.username)
+    
+    print(f"✅ Login realizado: {data.username}")
+    
+    return {
+        "token": token,
+        "username": data.username
+    }
+
+@app.get("/api/auth/me")
+async def get_current_user(username: str = Depends(verify_token)):
+    if username not in users_db:
+        raise HTTPException(404, "Usuário não encontrado")
+    
+    return {
+        "username": username,
+        "email": users_db[username].get("email"),
+        "created_at": users_db[username].get("created_at")
+    }
 
 @app.get("/api/health")
 async def health():
@@ -382,16 +540,18 @@ async def health():
         "api_key_set": bool(OPENAI_API_KEY),
         "cache_entries": len(api_cache.cache),
         "cache_ttl_hours": api_cache.ttl / 3600,
-        "version": "3.0.0",
+        "version": "4.0.0",
         "timestamp": time.time(),
+        "users_count": len(users_db),
         "features": {
             "text_processing": True,
-            "image_processing": True
+            "image_processing": True,
+            "authentication": True
         }
     }
 
 @app.get("/api/cache/clear")
-async def clear_cache():
+async def clear_cache(username: str = Depends(verify_token)):
     entries = len(api_cache.cache)
     api_cache.cache.clear()
     return {
@@ -418,10 +578,11 @@ async def cache_stats():
     }
 
 @app.post("/api/process-image")
-async def process_image(file: UploadFile = File(...)):
+async def process_image(file: UploadFile = File(...), username: str = Depends(verify_token)):
     try:
         print(f"\n{'='*60}")
         print(f"🖼️ Processando imagem: {file.filename}")
+        print(f"👤 Usuário: {username}")
         print(f"🤖 Modelo: {MODEL_NAME}")
         print(f"{'='*60}\n")
         
@@ -482,38 +643,36 @@ async def process_image(file: UploadFile = File(...)):
         )
 
 @app.post("/api/process-text")
-async def process_text(data: TextInput):
+async def process_text(
+    data: TextInput,
+    username: str = Depends(get_optional_user)
+):
     try:
         print(f"\n{'='*60}")
         print(f"📝 Processando texto ({len(data.text)} caracteres)")
+        print(f"👤 Usuário: {username}")
         print(f"🤖 Modelo: {MODEL_NAME}")
         print(f"{'='*60}\n")
-        
+
         if not data.text or len(data.text.strip()) < 10:
             raise HTTPException(400, "Texto muito curto. Mínimo: 10 caracteres")
-        
+
         cache_key = generate_cache_key(data.text, "text")
-        
+
         cached_result = api_cache.get(cache_key)
         if cached_result:
             print("✅ Resultado recuperado do cache (tokens economizados!)")
             return JSONResponse(content=cached_result)
 
-        print("📄 Processando texto (primeira vez)...")
-
-        prompt = create_game_prompt(f"**Conteúdo do dever de casa**:\n\n{data.text}")
-
-        print("🚀 Enviando para OpenAI...")
+        prompt = create_game_prompt(
+            f"**Conteúdo do dever de casa**:\n\n{data.text}"
+        )
 
         response_text = call_ai_with_text(prompt)
-        
-        print(f"✅ Resposta recebida ({len(response_text)} caracteres)")
-        
+
         game_data = safe_json_parse(response_text)
         validate_questions(game_data)
-        
-        print(f"✅ {len(game_data['questions'])} questões geradas com sucesso!")
-        
+
         api_cache.set(cache_key, game_data)
 
         return JSONResponse(content=game_data)
@@ -530,8 +689,9 @@ async def process_text(data: TextInput):
             detail=f"Erro ao processar texto: {str(e)}"
         )
 
+
 @app.post("/api/shuffle-questions")
-async def shuffle_questions(data: ShuffleInput):
+async def shuffle_questions(data: ShuffleInput, username: str = Depends(verify_token)):
     try:
         import random
         
@@ -563,15 +723,17 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     
     print("\n" + "="*60)
-    print("🎮 SchoolQuest API v3.0.0")
+    print("🎮 SchoolQuest API v4.0.0")
     print("="*60)
     print(f"🤖 Provedor de IA: OPENAI")
     print(f"📦 Modelo ativo: {MODEL_NAME}")
+    print(f"🔐 Autenticação: Habilitada")
     print("💾 Cache: Ativado (24 horas)")
     print("🔒 CORS: Habilitado")
     print("="*60)
     print(f"📡 Servidor: http://0.0.0.0:{port}")
-    print("📘 Documentação: /docs")
+    print("🏠 Página inicial: / (redireciona para login)")
+    print("📘 Documentação API: /docs")
     print("🏥 Health check: /api/health")
     print("="*60 + "\n")
 

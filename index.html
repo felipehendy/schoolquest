@@ -858,6 +858,61 @@
     </div>
 
     <script>
+
+        // Adicionar no início do <script> do index.html
+
+// Verificar se está autenticado
+const token = localStorage.getItem('token');
+if (!token) {
+    window.location.href = 'login.html';
+}
+
+// Adicionar botão de logout no header
+const username = localStorage.getItem('username');
+if (username) {
+    document.querySelector('.subtitle').innerHTML = `
+        Bem-vindo, ${username}! 
+        <button onclick="logout()" style="margin-left: 10px; padding: 5px 15px; border-radius: 10px; border: none; background: #FF6B8B; color: white; cursor: pointer;">
+            🚪 Sair
+        </button>
+    `;
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = 'login.html';
+}
+
+// Adicionar token nas requisições
+async function callProcessImage(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-image`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        body: formData
+    }, 60000);
+
+    // resto do código...
+}
+
+async function callProcessText(text) {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-text`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ text })
+    }, 60000);
+
+    // resto do código...
+}
+
         // ========== CONFIGURAÇÃO DA API - AUTO-DETECÇÃO ==========
         const API_BASE_URL = (() => {
             const hostname = window.location.hostname;
