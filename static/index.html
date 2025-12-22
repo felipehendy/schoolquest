@@ -41,6 +41,7 @@
             margin: 0 auto;
         }
 
+        /* ========== HEADER ========== */
         .header {
             background: white;
             border-radius: var(--radius-lg);
@@ -91,6 +92,7 @@
             margin-top: 5px;
         }
 
+        /* ========== PROGRESS BAR ========== */
         .progress-wrapper {
             background: rgba(255,255,255,0.3);
             height: 12px;
@@ -107,6 +109,7 @@
             width: 0%;
         }
 
+        /* ========== CARDS ========== */
         .card {
             background: white;
             border-radius: var(--radius-lg);
@@ -123,6 +126,7 @@
             text-align: center;
         }
 
+        /* ========== BUTTONS ========== */
         .btn {
             font-family: 'Fredoka', cursive;
             font-size: 18px;
@@ -177,6 +181,7 @@
             flex: 1;
         }
 
+        /* ========== TABS ========== */
         .tabs {
             display: flex;
             gap: 10px;
@@ -202,6 +207,7 @@
             border-color: var(--primary);
         }
 
+        /* ========== UPLOAD AREA ========== */
         .upload-zone {
             border: 3px dashed var(--accent);
             border-radius: var(--radius-md);
@@ -241,6 +247,7 @@
             color: #718096;
         }
 
+        /* ========== IMAGE PREVIEW ========== */
         .preview {
             position: relative;
             margin: 20px 0;
@@ -258,6 +265,7 @@
             box-shadow: 0 8px 30px rgba(0,0,0,0.2);
         }
 
+        /* ========== TEXT AREA ========== */
         .text-input {
             width: 100%;
             min-height: 150px;
@@ -275,6 +283,7 @@
             border-color: var(--primary);
         }
 
+        /* ========== LOADING ========== */
         .loading {
             text-align: center;
             padding: 60px 20px;
@@ -294,6 +303,7 @@
             to { transform: rotate(360deg); }
         }
 
+        /* ========== GAME AREA ========== */
         .game {
             animation: slideUp 0.5s;
         }
@@ -348,6 +358,7 @@
             line-height: 1.5;
         }
 
+        /* ========== OPTIONS ========== */
         .options {
             display: grid;
             gap: 12px;
@@ -416,6 +427,232 @@
             75% { transform: translateX(10px); }
         }
 
+        /* ========== COMPLETAR FRASE ========== */
+        .fill-blank-container {
+            background: linear-gradient(135deg, #FFF9E6, #FFFBF0);
+            padding: 30px;
+            border-radius: var(--radius-md);
+            margin-bottom: 25px;
+        }
+
+        .sentence-with-blank {
+            font-size: 20px;
+            line-height: 1.8;
+            color: var(--dark);
+            margin-bottom: 20px;
+        }
+
+        .blank-space {
+            display: inline-block;
+            min-width: 150px;
+            padding: 5px 15px;
+            border-bottom: 3px dashed var(--primary);
+            font-weight: 700;
+            color: var(--primary);
+            background: white;
+            border-radius: 5px;
+        }
+
+        /* ========== JOGO DA MEMÓRIA ========== */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .memory-card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, var(--primary), #FF8FB9);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            position: relative;
+            color: white;
+            font-weight: 600;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .memory-card:hover:not(.matched) {
+            transform: scale(1.05);
+        }
+
+        .memory-card.flipped {
+            background: white;
+            border: 3px solid var(--secondary);
+            color: var(--dark);
+        }
+
+        .memory-card.matched {
+            background: var(--success);
+            color: white;
+            cursor: default;
+            opacity: 0.6;
+        }
+
+        /* ========== LIGAR PONTOS ========== */
+        .connect-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 20px 0;
+        }
+
+        .connect-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .connect-item {
+            padding: 15px;
+            background: white;
+            border: 3px solid #E2E8F0;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 15px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .connect-item:hover:not(.matched) {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .connect-item.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .connect-item.matched {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+            cursor: default;
+        }
+
+        /* ========== FEEDBACK ========== */
+        .feedback {
+            margin-top: 25px;
+            padding: 25px;
+            border-radius: var(--radius-md);
+            animation: fadeIn 0.5s;
+        }
+
+        .feedback-correct {
+            background: linear-gradient(135deg, var(--success), #00E4B4);
+            color: white;
+        }
+
+        .feedback-wrong {
+            background: linear-gradient(135deg, var(--error), #FF8FA3);
+            color: white;
+        }
+
+        .feedback-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .feedback-points {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .explanation {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            margin-top: 15px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* ========== FINAL SCREEN ========== */
+        .final {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .final-trophy {
+            font-size: 100px;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        .final-score {
+            font-size: 56px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 20px 0;
+        }
+
+        .final-message {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 20px 0;
+        }
+
+        .final-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .final-stat {
+            text-align: center;
+        }
+
+        .final-stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .final-stat-label {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        /* ========== CACHE INFO ========== */
+        .cache-info {
+            background: linear-gradient(135deg, #E0F2FE, #DBEAFE);
+            border: 2px solid var(--secondary);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .cache-icon {
+            font-size: 32px;
+        }
+
+        .cache-text {
+            flex: 1;
+            font-size: 14px;
+            color: var(--dark);
+        }
+
+        /* ========== GAME MODE SELECTOR ========== */
         .mode-selector {
             background: linear-gradient(135deg, #F3E8FF, #E9D5FF);
             border-radius: var(--radius-md);
@@ -463,6 +700,7 @@
             color: var(--dark);
         }
 
+        /* ========== ERROR MESSAGE ========== */
         .error-message {
             background: linear-gradient(135deg, var(--error), #FF8FA3);
             color: white;
@@ -478,44 +716,56 @@
             margin-bottom: 10px;
         }
 
-        .cache-info {
-            background: linear-gradient(135deg, #E0F2FE, #DBEAFE);
-            border: 2px solid var(--secondary);
+        /* ========== CONNECTION STATUS ========== */
+        .connection-status {
+            background: #FFF5F5;
+            border: 2px solid var(--error);
             border-radius: var(--radius-md);
             padding: 15px;
             margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            display: none;
         }
 
-        .cache-icon {
-            font-size: 32px;
+        .connection-status.active {
+            display: block;
         }
 
-        .cache-text {
-            flex: 1;
-            font-size: 14px;
-            color: var(--dark);
+        .connection-status.connected {
+            background: #F0FFF4;
+            border-color: var(--success);
         }
 
+        /* ========== UTILITY ========== */
         .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mb-20 { margin-bottom: 20px; }
 
+        /* ========== RESPONSIVE ========== */
         @media (max-width: 600px) {
             .logo { font-size: 36px; }
             .card { padding: 20px; }
             .question-text { font-size: 18px; }
             .option { padding: 15px; }
             .btn-group { flex-direction: column; }
+            .final-stats { flex-direction: column; gap: 15px; }
+            .memory-grid { grid-template-columns: repeat(3, 1fr); }
+            .connect-container { grid-template-columns: 1fr; gap: 20px; }
             .mode-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- CONNECTION STATUS -->
+        <div class="connection-status" id="connectionStatus">
+            <div style="font-weight: 600; margin-bottom: 5px;">⚠️ Status da Conexão</div>
+            <div id="connectionMessage">Verificando conexão com o servidor...</div>
+        </div>
+
+        <!-- HEADER -->
         <header class="header">
             <div class="logo">🎮 SchoolQuest</div>
-            <div class="subtitle" id="userGreeting">Aprender brincando é mais divertido!</div>
+            <div class="subtitle">Aprender brincando é mais divertido!</div>
             
             <div class="stats-grid">
                 <div class="stat-card">
@@ -537,6 +787,7 @@
             </div>
         </header>
 
+        <!-- CACHE INFO -->
         <div class="cache-info hidden" id="cacheInfo">
             <div class="cache-icon">💾</div>
             <div class="cache-text">
@@ -544,9 +795,11 @@
             </div>
         </div>
 
+        <!-- UPLOAD CARD -->
         <div class="card" id="uploadCard">
             <h2 class="card-title">
-                Pronto para o desafio? 👋
+                Olá, Ana, Levi e João! 👋<br>
+                Pronto para o desafio?
             </h2>
 
             <div class="tabs">
@@ -558,6 +811,7 @@
                 </button>
             </div>
 
+            <!-- IMAGE TAB -->
             <div id="imageTab">
                 <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
                     <div class="upload-icon">📸</div>
@@ -574,6 +828,7 @@
                 </div>
             </div>
 
+            <!-- TEXT TAB -->
             <div id="textTab" class="hidden">
                 <textarea 
                     id="textInput" 
@@ -585,6 +840,7 @@
             </div>
         </div>
 
+        <!-- LOADING -->
         <div class="card hidden" id="loading">
             <div class="loading">
                 <div class="spinner"></div>
@@ -597,31 +853,92 @@
             </div>
         </div>
 
+        <!-- GAME AREA -->
         <div id="gameArea"></div>
     </div>
 
     <script>
-        // ========== AUTENTICAÇÃO ==========
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = 'login.html';
-        }
 
-        const username = localStorage.getItem('username');
-        if (username) {
-            document.getElementById('userGreeting').innerHTML = `
-                Bem-vindo, <strong>${username}</strong>! 
-                <button onclick="logout()" style="margin-left: 10px; padding: 5px 15px; border-radius: 10px; border: none; background: #FF6B8B; color: white; cursor: pointer; font-size: 14px;">
-                    🚪 Sair
-                </button>
-            `;
-        }
+        // Adicionar no início do <script> do index.html
 
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('username');
-            window.location.href = 'login.html';
-        }
+// Verificar se está autenticado
+const token = localStorage.getItem('token');
+if (!token) {
+    window.location.href = 'login.html';
+}
+
+// Adicionar botão de logout no header
+const username = localStorage.getItem('username');
+if (username) {
+    document.querySelector('.subtitle').innerHTML = `
+        Bem-vindo, ${username}! 
+        <button onclick="logout()" style="margin-left: 10px; padding: 5px 15px; border-radius: 10px; border: none; background: #FF6B8B; color: white; cursor: pointer;">
+            🚪 Sair
+        </button>
+    `;
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = 'login.html';
+}
+
+// Adicionar token nas requisições
+async function callProcessImage(file) {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        throw new Error('Token não encontrado. Faça login novamente.');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    console.log('📤 Enviando imagem com token...');
+
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-image`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`  // ✅ TOKEN AQUI!
+        },
+        body: formData
+    }, 60000);
+
+    if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        window.location.href = 'login.html';
+        throw new Error('Sessão expirada. Redirecionando...');
+    }
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Erro ${response.status}`);
+    }
+
+    return await response.json();
+}
+
+async function callProcessText(text) {
+    const token = localStorage.getItem('token');
+
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-text`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })  // ✅ TOKEN OPCIONAL
+        },
+        body: JSON.stringify({ text })
+    }, 60000);
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Erro ${response.status}`);
+    }
+
+    return await response.json();
+}
 
         // ========== CONFIGURAÇÃO DA API - AUTO-DETECÇÃO ==========
         const API_BASE_URL = (() => {
