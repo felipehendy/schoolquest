@@ -65,6 +65,28 @@
             color: #718096;
             font-size: 16px;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #FF6B8B, #FF8FA3);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255,107,139,0.3);
         }
 
         .stats-grid {
@@ -765,7 +787,9 @@
         <!-- HEADER -->
         <header class="header">
             <div class="logo">🎮 SchoolQuest</div>
-            <div class="subtitle">Aprender brincando é mais divertido!</div>
+            <div class="subtitle" id="subtitleArea">
+                Aprender brincando é mais divertido!
+            </div>
             
             <div class="stats-grid">
                 <div class="stat-card">
@@ -798,8 +822,7 @@
         <!-- UPLOAD CARD -->
         <div class="card" id="uploadCard">
             <h2 class="card-title">
-                Olá, Ana, Levi e João! 👋<br>
-                Pronto para o desafio?
+                Pronto para o desafio? 👋
             </h2>
 
             <div class="tabs">
@@ -858,105 +881,174 @@
     </div>
 
     <script>
-
-        // Adicionar no início do <script> do index.html
-
-// Verificar se está autenticado
-const token = localStorage.getItem('token');
-if (!token) {
-    window.location.href = 'login.html';
-}
-
-// Adicionar botão de logout no header
-const username = localStorage.getItem('username');
-if (username) {
-    document.querySelector('.subtitle').innerHTML = `
-        Bem-vindo, ${username}! 
-        <button onclick="logout()" style="margin-left: 10px; padding: 5px 15px; border-radius: 10px; border: none; background: #FF6B8B; color: white; cursor: pointer;">
-            🚪 Sair
-        </button>
-    `;
-}
-
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    window.location.href = 'login.html';
-}
-
-// Adicionar token nas requisições
-async function callProcessImage(file) {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('Token não encontrado. Faça login novamente.');
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    console.log('📤 Enviando imagem com token...');
-
-    const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-image`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`  // ✅ TOKEN AQUI!
-        },
-        body: formData
-    }, 60000);
-
-    if (response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        window.location.href = 'login.html';
-        throw new Error('Sessão expirada. Redirecionando...');
-    }
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.detail || `Erro ${response.status}`);
-    }
-
-    return await response.json();
-}
-
-async function callProcessText(text) {
-    const token = localStorage.getItem('token');
-
-    const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-text`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })  // ✅ TOKEN OPCIONAL
-        },
-        body: JSON.stringify({ text })
-    }, 60000);
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.detail || `Erro ${response.status}`);
-    }
-
-    return await response.json();
-}
-
         // ========== CONFIGURAÇÃO DA API - AUTO-DETECÇÃO ==========
         const API_BASE_URL = (() => {
             const hostname = window.location.hostname;
             
-            // Se estiver em localhost, usa localhost
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
                 return 'http://localhost:8000';
             }
             
-            // Se estiver no Render, usa a URL do Render
             return 'https://schoolquest-aukm.onrender.com';
         })();
 
         console.log('🌐 API configurada para:', API_BASE_URL);
-        console.log('🖥️ Hostname atual:', window.location.hostname);
 
-        // ========== GAME MODES ========== 
+        // ========== AUTENTICAÇÃO ==========
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+
+        // Redirecionar para login se não autenticado
+        if (!token) {
+            console.warn('⚠️ Token não encontrado. Redirecionando para login...');
+            window.location.href = '/login.html';
+        }
+
+        // Exibir username e botão de logout
+        if (username) {
+            const subtitleArea = document.getElementById('subtitleArea');
+            subtitleArea.innerHTML = `
+                <span>Bem-vindo, <strong>${username}</strong>! 🎉</span>
+                <button class="btn-logout" onclick="logout()">🚪 Sair</button>
+            `;
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                console.log('👋 Logout realizado');
+                window.location.href = '/login.html';
+            }
+        }
+
+        // ========== FETCH COM TIMEOUT ==========
+        async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Tempo esgotado. O servidor pode estar reiniciando.');
+                }
+                throw error;
+            }
+        }
+
+        // ========== CHAMADAS DE API COM TOKEN JWT ==========
+        async function callProcessImage(file) {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                throw new Error('Token não encontrado. Faça login novamente.');
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            console.log('📤 Enviando imagem com autenticação...');
+
+            const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-image`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            }, 60000);
+
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/login.html';
+                throw new Error('Sessão expirada');
+            }
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.detail || `Erro ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
+        async function callProcessText(text) {
+            const token = localStorage.getItem('token');
+
+            console.log('📤 Enviando texto...');
+
+            const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-text`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                },
+                body: JSON.stringify({ text })
+            }, 60000);
+
+            if (response.status === 401 && token) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/login.html';
+                throw new Error('Sessão expirada');
+            }
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.detail || `Erro ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
+        // ========== CONNECTION CHECK ==========
+        async function checkConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            const messageDiv = document.getElementById('connectionMessage');
+            
+            try {
+                console.log('🔍 Verificando conexão...');
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
+                const response = await fetch(`${API_BASE_URL}/api/health`, {
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Backend conectado:', data);
+                    
+                    statusDiv.classList.add('connected');
+                    messageDiv.innerHTML = `✅ Conectado! (${data.ai_provider.toUpperCase()})`;
+                    
+                    setTimeout(() => {
+                        statusDiv.classList.remove('active');
+                    }, 3000);
+                } else {
+                    throw new Error(`Servidor retornou: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Erro de conexão:', error);
+                
+                statusDiv.classList.add('active');
+                messageDiv.innerHTML = `⚠️ Não foi possível conectar ao servidor.`;
+            }
+        }
+
+        // ========== GAME MODES ==========
         const GAME_MODES = {
             MULTIPLE_CHOICE: 'multiple_choice',
             FILL_BLANK: 'fill_blank',
@@ -982,103 +1074,6 @@ async function callProcessText(text) {
             connectMatches: [],
             connectPairs: []
         };
-
-        // ========== CONNECTION CHECK ==========
-        async function checkConnection() {
-            const statusDiv = document.getElementById('connectionStatus');
-            const messageDiv = document.getElementById('connectionMessage');
-            
-            try {
-                console.log('🔍 Verificando conexão com:', `${API_BASE_URL}/api/health`);
-                
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-                
-                const response = await fetch(`${API_BASE_URL}/api/health`, {
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Backend conectado:', data);
-                    
-                    statusDiv.classList.add('connected');
-                    messageDiv.innerHTML = `✅ Conectado ao servidor! (${data.ai_provider.toUpperCase()})`;
-                    
-                    setTimeout(() => {
-                        statusDiv.classList.remove('active');
-                    }, 3000);
-                } else {
-                    throw new Error(`Servidor retornou: ${response.status}`);
-                }
-            } catch (error) {
-                console.error('❌ Erro de conexão:', error);
-                
-                statusDiv.classList.add('active');
-                messageDiv.innerHTML = `
-                    ⚠️ Não foi possível conectar ao servidor.<br>
-                    <small>URL: ${API_BASE_URL}</small><br>
-                    <small>Erro: ${error.message}</small>
-                `;
-            }
-        }
-
-        // ========== API CALLS COM TIMEOUT ==========
-        async function fetchWithTimeout(url, options = {}, timeout = 30000) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeout);
-            
-            try {
-                const response = await fetch(url, {
-                    ...options,
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                return response;
-            } catch (error) {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                    throw new Error('Tempo esgotado. O servidor pode estar reiniciando.');
-                }
-                throw error;
-            }
-        }
-
-        async function callProcessImage(file) {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-image`, {
-                method: 'POST',
-                body: formData
-            }, 60000); // 60s para imagens (cold start)
-
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error.detail || `Erro ${response.status}: Não foi possível processar a imagem`);
-            }
-
-            return await response.json();
-        }
-
-        async function callProcessText(text) {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-text`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text })
-            }, 60000); // 60s para texto (cold start)
-
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error.detail || `Erro ${response.status}: Não foi possível processar o texto`);
-            }
-
-            return await response.json();
-        }
 
         // ========== CONVERTERS ==========
         const questionConverters = {
@@ -1356,7 +1351,7 @@ async function callProcessText(text) {
             showLoading();
             
             try {
-                console.log('🚀 Enviando imagem para o backend...');
+                console.log('🚀 Enviando imagem...');
                 const data = await callProcessImage(state.uploadedFile);
                 console.log('✅ Questões recebidas:', data);
                 
@@ -1381,7 +1376,7 @@ async function callProcessText(text) {
             showLoading();
             
             try {
-                console.log('🚀 Enviando texto para o backend...');
+                console.log('🚀 Enviando texto...');
                 const data = await callProcessText(text);
                 console.log('✅ Questões recebidas:', data);
                 

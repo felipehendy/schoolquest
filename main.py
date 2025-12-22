@@ -526,7 +526,7 @@ async def cache_stats():
 # ROTAS DE PROCESSAMENTO
 # =========================================================
 @app.post("/api/process-image")
-async def process_image(file: UploadFile = File(...), username: str = Depends(verify_token)):
+async def process_image(file: UploadFile = File(...), username: str = Depends(get_optional_user)):
     try:
         print(f"\n{'='*60}")
         print(f"🖼️ Processando imagem: {file.filename}")
