@@ -420,10 +420,11 @@ def call_ai_with_image(prompt: str, image_base64: str) -> str:
 
 @app.get("/")
 async def root():
-    return RedirectResponse(url="/login.html")
+    # CORREÇÃO FINAL: Redireciona para o arquivo dentro da pasta static
+    return RedirectResponse(url="/static/login.html")
 
 @app.post("/api/auth/register")
-async def register(data: LoginInput):
+async def register(data: RegisterInput):
     if data.username in users_db:
         raise HTTPException(400, "Usuário já existe")
     
