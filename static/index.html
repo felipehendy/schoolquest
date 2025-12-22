@@ -881,8 +881,7 @@
     </div>
 
     <script>
-        // ========== CONFIGURAÇÃO DA API - AUTO-DETECÇÃO ==========
-        const API_BASE_URL = (() => {
+        // ========== CONFIGURAÇÃO DA API - AUTO-DETECÇÃO ========== (function() {
             const hostname = window.location.hostname;
             
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -894,8 +893,7 @@
 
         console.log('🌐 API configurada para:', API_BASE_URL);
 
-        // ========== AUTENTICAÇÃO ==========
-        const token = localStorage.getItem('token');
+        // ========== AUTENTICAÇÃO ========== (const token = localStorage.getItem('token');
         const username = localStorage.getItem('username');
 
         // Redirecionar para login se não autenticado
@@ -922,8 +920,7 @@
             }
         }
 
-        // ========== FETCH COM TIMEOUT ==========
-        async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+        // ========== FETCH COM TIMEOUT ========== async function fetchWithTimeout(url, options = {}, timeout = 30000) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
             
@@ -943,8 +940,7 @@
             }
         }
 
-        // ========== CHAMADAS DE API COM TOKEN JWT ==========
-        async function callProcessImage(file) {
+        // ========== CHAMADAS DE API COM TOKEN JWT ========== async function callProcessImage(file) {
             const token = localStorage.getItem('token');
             
             if (!token) {
@@ -1010,8 +1006,7 @@
             return await response.json();
         }
 
-        // ========== CONNECTION CHECK ==========
-        async function checkConnection() {
+        // ========== CONNECTION CHECK ========== async function checkConnection() {
             const statusDiv = document.getElementById('connectionStatus');
             const messageDiv = document.getElementById('connectionMessage');
             
@@ -1048,16 +1043,14 @@
             }
         }
 
-        // ========== GAME MODES ==========
-        const GAME_MODES = {
+        // ========== GAME MODES ========== (const GAME_MODES = {
             MULTIPLE_CHOICE: 'multiple_choice',
             FILL_BLANK: 'fill_blank',
             MEMORY: 'memory',
             CONNECT: 'connect'
         };
 
-        // ========== STATE ==========
-        let state = {
+        // ========== STATE ========== let state = {
             questions: [],
             originalQuestions: [],
             currentIndex: 0,
@@ -1075,8 +1068,7 @@
             connectPairs: []
         };
 
-        // ========== CONVERTERS ==========
-        const questionConverters = {
+        // ========== CONVERTERS ========== const questionConverters = {
             toMultipleChoice: (q) => q,
             
             toFillBlank: (q) => {
@@ -1118,8 +1110,7 @@
             }
         };
 
-        // ========== TEMPLATES ==========
-        const templates = {
+        // ========== TEMPLATES ========== const templates = {
             modeSelector: () => `
                 <div class="card">
                     <div class="mode-selector">
@@ -1188,7 +1179,7 @@
 
                     <div class="options">
                         ${q.options.map((opt, i) => `
-                            <div class="option" onclick="selectFillBlank(${i}, '${opt.replace(/'/g, "\\'")}')">
+                            <div class="option" onclick="selectFillBlank(${i}, '${opt.replace(/'/g, "\'")}')">
                                 <div class="option-letter">${String.fromCharCode(65 + i)}</div>
                                 <div>${opt}</div>
                             </div>
@@ -1278,6 +1269,9 @@
                         ${correct ? `+${points} pontos` : 'Tente novamente!'}
                     </div>
                     ${explanation ? `<div class="explanation">💡 ${explanation}</div>` : ''}
+                    <button class="btn btn-primary btn-full" onclick="nextQuestion()" style="margin-top: 20px;">
+                        Próxima Pergunta &rarr;
+                    </button>
                 </div>
             `,
 
@@ -1294,8 +1288,7 @@
             `
         };
 
-        // ========== TAB SWITCHING ==========
-        function switchTab(tab) {
+        // ========== TAB SWITCHING ========== function switchTab(tab) {
             const tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
@@ -1309,8 +1302,7 @@
             }
         }
 
-        // ========== FILE HANDLING ==========
-        const fileInput = document.getElementById('fileInput');
+        // ========== FILE HANDLING ========== const fileInput = document.getElementById('fileInput');
         const dropZone = document.getElementById('dropZone');
 
         fileInput.addEventListener('change', (e) => {
@@ -1344,8 +1336,7 @@
             reader.readAsDataURL(file);
         }
 
-        // ========== PROCESSING ==========
-        async function processImage() {
+        // ========== PROCESSING ========== async function processImage() {
             if (!state.uploadedFile) return;
             
             showLoading();
@@ -1391,8 +1382,7 @@
             }
         }
 
-        // ========== MODE SELECTION ==========
-        function showModeSelector() {
+        // ========== MODE SELECTION ========== function showModeSelector() {
             document.getElementById('uploadCard').classList.add('hidden');
             document.getElementById('cacheInfo').classList.remove('hidden');
             
@@ -1411,8 +1401,7 @@
             renderGame();
         }
 
-        // ========== GAME RENDERING ==========
-        function renderGame() {
+        // ========== GAME RENDERING ========== function renderGame() {
             const gameArea = document.getElementById('gameArea');
             
             switch(state.currentMode) {
@@ -1451,8 +1440,7 @@
             updateProgress();
         }
 
-        // ========== MULTIPLE CHOICE ==========
-        function selectAnswer(index) {
+        // ========== MULTIPLE CHOICE ========== function selectAnswer(index) {
             const q = state.questions[state.currentIndex];
             const correct = index === q.correct;
             
@@ -1471,15 +1459,9 @@
             }
             
             document.getElementById('feedback').innerHTML = templates.feedback(correct, q.points, q.explanation);
-            
-            setTimeout(() => {
-                state.currentIndex++;
-                renderGame();
-            }, 3000);
         }
 
-        // ========== FILL BLANK ==========
-        function selectFillBlank(index, selectedText) {
+        // ========== FILL BLANK ========== function selectFillBlank(index, selectedText) {
             const q = state.currentFillBlank;
             const correct = q.options[index] === q.blank;
             
@@ -1509,15 +1491,14 @@
             }
             
             document.getElementById('feedback').innerHTML = templates.feedback(correct, state.questions[state.currentIndex].points, state.questions[state.currentIndex].explanation);
-            
-            setTimeout(() => {
-                state.currentIndex++;
-                renderGame();
-            }, 3000);
         }
 
-        // ========== MEMORY GAME ==========
-        function flipCard(index) {
+        function nextQuestion() {
+            state.currentIndex++;
+            renderGame();
+        }
+
+        // ========== MEMORY GAME ========== function flipCard(index) {
             const card = document.querySelector(`[data-id="${index}"]`);
             
             if (state.memoryMatched.includes(index) || state.memoryFlipped.includes(index) || state.memoryFlipped.length >= 2) {
@@ -1576,8 +1557,7 @@
             renderGame();
         }
 
-        // ========== CONNECT GAME ==========
-        function selectConnect(type, id) {
+        // ========== CONNECT GAME ========== function selectConnect(type, id) {
             const element = document.querySelector(`[data-type="${type}"][data-id="${id}"]`);
             
             if (element.classList.contains('matched')) return;
@@ -1636,8 +1616,7 @@
             renderGame();
         }
 
-        // ========== STATS & PROGRESS ==========
-        function updateStats() {
+        // ========== STATS & PROGRESS ========== function updateStats() {
             document.getElementById('points').textContent = state.points;
             document.getElementById('stars').textContent = '⭐'.repeat(state.stars);
             document.getElementById('level').textContent = state.level;
@@ -1657,8 +1636,7 @@
             document.getElementById('progress').style.width = progress + '%';
         }
 
-        // ========== FINAL SCREEN ==========
-        function showFinalScreen() {
+        // ========== FINAL SCREEN ========== function showFinalScreen() {
             const gameArea = document.getElementById('gameArea');
             const totalQuestions = state.questions.length;
             
@@ -1718,8 +1696,7 @@
             showModeSelector();
         }
 
-        // ========== LOADING ==========
-        function showLoading() {
+        // ========== LOADING ========== function showLoading() {
             document.getElementById('uploadCard').classList.add('hidden');
             document.getElementById('loading').classList.remove('hidden');
         }
@@ -1728,8 +1705,7 @@
             document.getElementById('loading').classList.add('hidden');
         }
 
-        // ========== INIT ==========
-        updateStats();
+        // ========== INIT ========== updateStats();
         checkConnection();
     </script>
 </body>
