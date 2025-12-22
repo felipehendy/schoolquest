@@ -13,48 +13,29 @@ from io import BytesIO
 from pathlib import Path
 import hashlib
 import time
+from openai import OpenAI
 
 # =========================================================
 # CARREGAMENTO DE VARIÁVEIS
 # =========================================================
 load_dotenv()
 
-AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini").lower()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-print(f"\n🤖 Provedor de IA selecionado: {AI_PROVIDER.upper()}")
+if not OPENAI_API_KEY:
+    raise ValueError("❌ OPENAI_API_KEY não encontrada no arquivo .env")
+
+print("\n🤖 Provedor de IA: OPENAI")
 
 # =========================================================
-# INICIALIZAÇÃO DO CLIENTE (GEMINI, DEEPSEEK OU OPENAI)
+# INICIALIZAÇÃO DO CLIENTE OPENAI
 # =========================================================
-if AI_PROVIDER == "gemini":
-    if not GOOGLE_API_KEY:
-        raise ValueError("❌ GOOGLE_API_KEY não encontrada no arquivo .env")
-    import google.genai as genai
-    client = genai.Client(api_key=GOOGLE_API_KEY)
-    print("✅ Cliente Gemini inicializado")
-    
-elif AI_PROVIDER == "deepseek":
-    if not DEEPSEEK_API_KEY:
-        raise ValueError("❌ DEEPSEEK_API_KEY não encontrada no arquivo .env")
-    from openai import OpenAI
-    client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
-        base_url="https://api.deepseek.com"
-    )
-    print("✅ Cliente DeepSeek inicializado")
+client = OpenAI(api_key=OPENAI_API_KEY)
+print("✅ Cliente OpenAI inicializado")
 
-elif AI_PROVIDER == "openai":
-    if not OPENAI_API_KEY:
-        raise ValueError("❌ OPENAI_API_KEY não encontrada no arquivo .env")
-    from openai import OpenAI
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    print("✅ Cliente OpenAI inicializado")
-
-else:
-    raise ValueError(f"❌ Provedor '{AI_PROVIDER}' não suportado. Use 'gemini', 'deepseek' ou 'openai'")
+# Modelo mais poderoso da OpenAI
+MODEL_NAME = "gpt-4o"
+print(f"✅ Usando modelo: {MODEL_NAME} 🏆")
 
 # =========================================================
 # CACHE SIMPLES EM MEMÓRIA
@@ -89,67 +70,12 @@ class SimpleCache:
 api_cache = SimpleCache(ttl=86400)
 
 # =========================================================
-# SISTEMA INTELIGENTE DE MODELOS
-# =========================================================
-def get_available_model():
-    """Retorna o melhor modelo disponível baseado no provedor"""
-    if AI_PROVIDER == "gemini":
-        try:
-            models = client.models.list()
-            available_models = [model.name for model in models]
-            print(f"📋 Modelos Gemini disponíveis: {available_models}")
-            
-            model_priority = [
-                "gemini-2.0-flash-exp",
-                "gemini-exp-1206",
-                "gemini-1.5-flash-latest",
-                "gemini-1.5-flash",
-            ]
-            
-            for preferred_name in model_priority:
-                for available_model in available_models:
-                    if preferred_name in available_model:
-                        print(f"✅ Usando modelo Gemini: {available_model}")
-                        return available_model
-            
-            for available_model in available_models:
-                if "gemini" in available_model.lower() and "flash" in available_model.lower():
-                    print(f"⚠️ Usando fallback Gemini: {available_model}")
-                    return available_model
-                    
-        except Exception as e:
-            print(f"⚠️ Não foi possível listar modelos Gemini: {e}")
-        
-        return "models/gemini-1.5-flash-latest"
-    
-    elif AI_PROVIDER == "deepseek":
-        model = "deepseek-chat"
-        print(f"✅ Usando modelo DeepSeek: {model}")
-        return model
-    
-    elif AI_PROVIDER == "openai":
-        model = "gpt-4o-mini"
-        print(f"✅ Usando modelo OpenAI: {model}")
-        return model
-
-MODEL_NAME = get_available_model()
-
-# =========================================================
 # CONFIGURAÇÃO DO MODELO
 # =========================================================
-if AI_PROVIDER == "gemini":
-    generation_config = {
-        "temperature": 0.7,
-        "top_p": 0.95,
-        "top_k": 40,
-        "max_output_tokens": 8192,
-        "response_mime_type": "application/json",
-    }
-else:
-    generation_config = {
-        "temperature": 0.7,
-        "max_tokens": 8192,
-    }
+generation_config = {
+    "temperature": 0.7,
+    "max_tokens": 8192,
+}
 
 # =========================================================
 # APP FASTAPI
@@ -157,7 +83,7 @@ else:
 app = FastAPI(
     title="SchoolQuest API",
     version="3.0.0",
-    description="API gamificada com Gemini, DeepSeek ou OpenAI"
+    description="API gamificada com OpenAI"
 )
 
 app.add_middleware(
@@ -182,7 +108,7 @@ class ShuffleInput(BaseModel):
 # =========================================================
 def generate_cache_key(content: str, content_type: str = "text") -> str:
     content_hash = hashlib.md5(content.encode()).hexdigest()
-    return f"{AI_PROVIDER}_{content_type}_{content_hash}"
+    return f"openai_{content_type}_{content_hash}"
 
 def safe_json_parse(text: str):
     try:
@@ -240,7 +166,6 @@ def validate_questions(game_data: dict):
 
 def create_game_prompt(content_description: str = "") -> str:
     if content_description:
-        # Prompt para quando há conteúdo específico (imagem ou texto)
         prompt = f"""Você é um assistente educacional especializado em criar questões de múltipla escolha divertidas e educativas para crianças de 8-9 anos.
 
 **SUA TAREFA**: Analise o conteúdo abaixo e crie questões ESPECIFICAMENTE sobre os tópicos, conceitos e informações presentes nesse conteúdo.
@@ -281,7 +206,6 @@ def create_game_prompt(content_description: str = "") -> str:
 
 **AGORA GERE O JSON** (sem texto adicional):"""
     else:
-        # Prompt genérico caso não haja conteúdo
         prompt = """Você é um assistente educacional. Crie 5 questões educativas variadas para crianças de 8-9 anos.
 
 Responda APENAS com JSON:
@@ -302,86 +226,40 @@ Responda APENAS com JSON:
     return prompt
 
 # =========================================================
-# FUNÇÕES DE CHAMADA À IA
+# FUNÇÕES DE CHAMADA À IA (OPENAI)
 # =========================================================
 def call_ai_with_text(prompt: str) -> str:
-    """Chama a IA escolhida com texto"""
-    if AI_PROVIDER == "gemini":
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=[{"role": "user", "parts": [{"text": prompt}]}],
-            config=generation_config
-        )
-        return response.text
-    
-    elif AI_PROVIDER == "deepseek":
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=generation_config["temperature"],
-            max_tokens=generation_config["max_tokens"]
-        )
-        return response.choices[0].message.content
-    
-    elif AI_PROVIDER == "openai":
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=generation_config["temperature"],
-            max_tokens=generation_config.get("max_tokens", 8192)
-        )
-        return response.choices[0].message.content
+    """Chama a OpenAI com texto"""
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=generation_config["temperature"],
+        max_tokens=generation_config["max_tokens"]
+    )
+    return response.choices[0].message.content
 
 def call_ai_with_image(prompt: str, image_base64: str) -> str:
-    """Chama a IA escolhida com imagem"""
-    if AI_PROVIDER == "gemini":
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=[
-                {
-                    "role": "user",
-                    "parts": [
-                        {"text": prompt},
-                        {
-                            "inline_data": {
-                                "mime_type": "image/jpeg",
-                                "data": image_base64
-                            }
+    """Chama a OpenAI com imagem"""
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_base64}"
                         }
-                    ]
-                }
-            ],
-            config=generation_config
-        )
-        return response.text
-    
-    elif AI_PROVIDER == "deepseek":
-        raise HTTPException(
-            status_code=400,
-            detail="❌ DeepSeek não suporta análise de imagens. Use o modo texto ou mude para Gemini/OpenAI no .env"
-        )
-    
-    elif AI_PROVIDER == "openai":
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_base64}"
-                            }
-                        }
-                    ]
-                }
-            ],
-            temperature=generation_config["temperature"],
-            max_tokens=generation_config.get("max_tokens", 8192)
-        )
-        return response.choices[0].message.content
+                    }
+                ]
+            }
+        ],
+        temperature=generation_config["temperature"],
+        max_tokens=generation_config["max_tokens"]
+    )
+    return response.choices[0].message.content
 
 # =========================================================
 # ROTAS
@@ -425,7 +303,7 @@ async def root():
             h1 {{ color: #667eea; margin-bottom: 10px; }}
             .status {{ color: #06D6A0; font-weight: bold; font-size: 20px; }}
             .provider {{ 
-                background: linear-gradient(135deg, #667eea, #764ba2);
+                background: linear-gradient(135deg, #10a37f, #1a7f64);
                 color: white;
                 padding: 15px;
                 border-radius: 10px;
@@ -439,9 +317,9 @@ async def root():
                 padding: 15px; 
                 margin: 10px 0; 
                 border-radius: 10px;
-                border-left: 4px solid #667eea;
+                border-left: 4px solid #10a37f;
             }}
-            a {{ color: #667eea; text-decoration: none; font-weight: bold; }}
+            a {{ color: #10a37f; text-decoration: none; font-weight: bold; }}
             a:hover {{ text-decoration: underline; }}
             code {{ 
                 background: #2D3748; 
@@ -458,7 +336,7 @@ async def root():
             <p class="status">✅ Backend Online e Funcionando!</p>
             
             <div class="provider">
-                🤖 Provedor: {AI_PROVIDER.upper()}
+                🤖 OpenAI - {MODEL_NAME}
             </div>
             
             <h2>📚 Endpoints Disponíveis:</h2>
@@ -476,7 +354,6 @@ async def root():
             <div class="endpoint">
                 <strong>🖼️ Processar Imagem:</strong><br>
                 <code>POST /api/process-image</code>
-                {"<br><span style='color: #E53E3E;'>⚠️ Não disponível com DeepSeek</span>" if AI_PROVIDER == "deepseek" else ""}
             </div>
             
             <div class="endpoint">
@@ -500,20 +377,16 @@ async def health():
     
     return {
         "status": "healthy",
-        "ai_provider": AI_PROVIDER,
+        "ai_provider": "openai",
         "model": MODEL_NAME,
-        "api_key_set": bool(
-            OPENAI_API_KEY if AI_PROVIDER == "openai" 
-            else DEEPSEEK_API_KEY if AI_PROVIDER == "deepseek" 
-            else GOOGLE_API_KEY
-        ),
+        "api_key_set": bool(OPENAI_API_KEY),
         "cache_entries": len(api_cache.cache),
         "cache_ttl_hours": api_cache.ttl / 3600,
         "version": "3.0.0",
         "timestamp": time.time(),
         "features": {
             "text_processing": True,
-            "image_processing": AI_PROVIDER in ["gemini", "openai"]
+            "image_processing": True
         }
     }
 
@@ -536,7 +409,8 @@ async def cache_stats():
     text_entries = sum(1 for k in api_cache.cache.keys() if "text" in k)
     
     return {
-        "ai_provider": AI_PROVIDER,
+        "ai_provider": "openai",
+        "model": MODEL_NAME,
         "total_entries": total_entries,
         "image_entries": image_entries,
         "text_entries": text_entries,
@@ -548,7 +422,7 @@ async def process_image(file: UploadFile = File(...)):
     try:
         print(f"\n{'='*60}")
         print(f"🖼️ Processando imagem: {file.filename}")
-        print(f"🤖 Provedor: {AI_PROVIDER} | Modelo: {MODEL_NAME}")
+        print(f"🤖 Modelo: {MODEL_NAME}")
         print(f"{'='*60}\n")
         
         contents = await file.read()
@@ -578,10 +452,9 @@ async def process_image(file: UploadFile = File(...)):
         image.save(buffered, format="JPEG", quality=85, optimize=True)
         img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
-        # Prompt instruindo a IA a analisar o que está NA IMAGEM
         prompt = create_game_prompt("Analise esta imagem de um dever de casa e crie questões sobre o conteúdo presente na imagem.")
 
-        print("🚀 Enviando para IA...")
+        print("🚀 Enviando para OpenAI...")
 
         response_text = call_ai_with_image(prompt, img_base64)
         
@@ -613,7 +486,7 @@ async def process_text(data: TextInput):
     try:
         print(f"\n{'='*60}")
         print(f"📝 Processando texto ({len(data.text)} caracteres)")
-        print(f"🤖 Provedor: {AI_PROVIDER} | Modelo: {MODEL_NAME}")
+        print(f"🤖 Modelo: {MODEL_NAME}")
         print(f"{'='*60}\n")
         
         if not data.text or len(data.text.strip()) < 10:
@@ -630,7 +503,7 @@ async def process_text(data: TextInput):
 
         prompt = create_game_prompt(f"**Conteúdo do dever de casa**:\n\n{data.text}")
 
-        print("🚀 Enviando para IA...")
+        print("🚀 Enviando para OpenAI...")
 
         response_text = call_ai_with_text(prompt)
         
@@ -692,7 +565,7 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("🎮 SchoolQuest API v3.0.0")
     print("="*60)
-    print(f"🤖 Provedor de IA: {AI_PROVIDER.upper()}")
+    print(f"🤖 Provedor de IA: OPENAI")
     print(f"📦 Modelo ativo: {MODEL_NAME}")
     print("💾 Cache: Ativado (24 horas)")
     print("🔒 CORS: Habilitado")
