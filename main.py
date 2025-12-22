@@ -298,7 +298,7 @@ Matérias possíveis:
 - Use palavras simples
 - Trabalhe: cores, números, animais, objetos
 - Pode misturar português + inglês
-- As explicações serão em Portugues Brasil, explicando o porque usou determinado termo em inglês
+- As explicações serão em Portugues Brasil, explicando o porque usou o inglês
 
 ══════════════════════════════════════
 📚 CONTEÚDO DO ALUNO
@@ -316,7 +316,7 @@ Retorne SOMENTE JSON válido, sem texto explicativo antes ou depois.
 {{
   "questions": [
     {{
-      "question": "Pergunta com emoji 😊",
+      "question": "Pergunta com emoji chamando de super heroi com uma super missão 😊",
       "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
       "correct": 0,
       "explanation": "Explicação educativa clara",
@@ -334,6 +334,8 @@ Retorne SOMENTE JSON válido, sem texto explicativo antes ou depois.
 5. Campo "correct": número de 0 a 3 (índice da resposta correta)
 6. Dificuldade: "fácil" (10 pontos), "médio" (15 pontos), "difícil" (20 pontos)
 7. Explicação: clara, educativa e encorajadora
+8. Se tiver Logado um menino user termos de super hérois
+9. Se tiver Logado uma menina use termos como Princesa
 
 **AGORA GERE O JSON**:"""
     else:
@@ -344,7 +346,7 @@ Responda APENAS com JSON válido:
 {
   "questions": [
     {
-      "question": "Pergunta com emoji 😊",
+      "question": "Pergunta com emoji chamando de super heroi com uma super missão 😊",
       "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
       "correct": 0,
       "explanation": "Explicação clara e educativa",
