@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SchoolQuest 🎮</title>
+    <title>🎮 SchoolQuest - Aprender é Divertido!</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap');
-
         * {
             margin: 0;
             padding: 0;
@@ -20,107 +18,191 @@
             --accent: #FFC93C;
             --success: #06D6A0;
             --error: #FF6B8B;
+            --purple: #9D4EDD;
+            --blue: #3A86FF;
+            --orange: #FF6B35;
             --dark: #2D3748;
             --light: #F7FAFC;
-            --shadow: 0 10px 40px rgba(0,0,0,0.1);
-            --radius-lg: 30px;
-            --radius-md: 20px;
-            --radius-sm: 15px;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Comic Sans MS', 'Segoe UI Emoji', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px 10px;
+            padding: 15px;
             color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        /* ========== ANIMAÇÕES DE FUNDO ========== */
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.6;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+        .shape:nth-child(2) { left: 70%; top: 10%; animation-delay: 1s; }
+        .shape:nth-child(3) { left: 20%; top: 60%; animation-delay: 2s; }
+        .shape:nth-child(4) { left: 80%; top: 70%; animation-delay: 3s; }
+        .shape:nth-child(5) { left: 50%; top: 40%; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
         }
 
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         /* ========== HEADER ========== */
         .header {
             background: white;
-            border-radius: var(--radius-lg);
-            padding: 25px;
+            border-radius: 25px;
+            padding: 20px;
             margin-bottom: 20px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,107,157,0.1), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { transform: translateX(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) rotate(45deg); }
         }
 
         .logo {
-            font-family: 'Fredoka', cursive;
-            font-size: 48px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            position: relative;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
 
         .subtitle {
             color: #718096;
-            font-size: 16px;
-            margin-bottom: 20px;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        .user-info {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
+        }
+
+        .user-badge {
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .btn-logout {
             padding: 8px 16px;
-            border-radius: 10px;
+            border-radius: 20px;
             border: none;
             background: linear-gradient(135deg, #FF6B8B, #FF8FA3);
             color: white;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 13px;
             transition: all 0.3s;
         }
 
         .btn-logout:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(255,107,139,0.3);
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255,107,139,0.4);
         }
 
+        /* ========== STATS ========== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
+            margin-bottom: 15px;
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #f6f8fb, #ffffff);
-            padding: 15px;
-            border-radius: var(--radius-md);
-            border: 2px solid #E2E8F0;
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            padding: 15px 10px;
+            border-radius: 15px;
+            border: 3px solid #E2E8F0;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
         }
 
         .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--primary);
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .stat-label {
-            font-size: 13px;
+            font-size: 12px;
             color: #718096;
             margin-top: 5px;
+            font-weight: 600;
         }
 
         /* ========== PROGRESS BAR ========== */
         .progress-wrapper {
             background: rgba(255,255,255,0.3);
-            height: 12px;
+            height: 15px;
             border-radius: 20px;
             overflow: hidden;
-            margin-top: 15px;
+            position: relative;
         }
 
         .progress-fill {
@@ -129,20 +211,44 @@
             border-radius: 20px;
             transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             width: 0%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
 
         /* ========== CARDS ========== */
         .card {
             background: white;
-            border-radius: var(--radius-lg);
-            padding: 30px;
+            border-radius: 25px;
+            padding: 25px;
             margin-bottom: 20px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .card-title {
-            font-family: 'Fredoka', cursive;
             font-size: 24px;
+            font-weight: 900;
             color: var(--dark);
             margin-bottom: 20px;
             text-align: center;
@@ -150,19 +256,21 @@
 
         /* ========== BUTTONS ========== */
         .btn {
-            font-family: 'Fredoka', cursive;
-            font-size: 18px;
-            padding: 16px 32px;
+            font-family: 'Comic Sans MS', sans-serif;
+            font-size: 16px;
+            padding: 15px 25px;
             border-radius: 50px;
             border: none;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-weight: 600;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .btn:active {
@@ -175,8 +283,8 @@
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255,107,157,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(255,107,157,0.4);
         }
 
         .btn-secondary {
@@ -206,19 +314,22 @@
         /* ========== TABS ========== */
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: #F7FAFC;
+            padding: 5px;
+            border-radius: 15px;
         }
 
         .tab-btn {
             flex: 1;
-            padding: 15px;
-            border-radius: var(--radius-md);
-            border: 2px solid #E2E8F0;
-            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 700;
             transition: all 0.3s;
             color: #718096;
         }
@@ -226,13 +337,13 @@
         .tab-btn.active {
             background: linear-gradient(135deg, var(--primary), #FF8FB9);
             color: white;
-            border-color: var(--primary);
+            box-shadow: 0 5px 15px rgba(255,107,157,0.3);
         }
 
-        /* ========== UPLOAD AREA ========== */
+        /* ========== UPLOAD ZONE ========== */
         .upload-zone {
-            border: 3px dashed var(--accent);
-            border-radius: var(--radius-md);
+            border: 4px dashed var(--accent);
+            border-radius: 20px;
             padding: 40px 20px;
             text-align: center;
             background: linear-gradient(135deg, #FFF9E6, #FFFBF0);
@@ -247,21 +358,16 @@
         }
 
         .upload-icon {
-            font-size: 64px;
+            font-size: 70px;
             margin-bottom: 15px;
             animation: bounce 2s infinite;
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
         .upload-text {
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--dark);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .upload-hint {
@@ -269,7 +375,7 @@
             color: #718096;
         }
 
-        /* ========== IMAGE PREVIEW ========== */
+        /* ========== PREVIEW ========== */
         .preview {
             position: relative;
             margin: 20px 0;
@@ -283,26 +389,27 @@
 
         .preview img {
             width: 100%;
-            border-radius: var(--radius-md);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
-        /* ========== TEXT AREA ========== */
+        /* ========== TEXT INPUT ========== */
         .text-input {
             width: 100%;
             min-height: 150px;
             padding: 15px;
-            border: 2px solid #E2E8F0;
-            border-radius: var(--radius-md);
-            font-family: inherit;
+            border: 3px solid #E2E8F0;
+            border-radius: 15px;
+            font-family: 'Comic Sans MS', sans-serif;
             font-size: 16px;
             resize: vertical;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
         }
 
         .text-input:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(255,107,157,0.1);
         }
 
         /* ========== LOADING ========== */
@@ -312,10 +419,10 @@
         }
 
         .spinner {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             margin: 0 auto 20px;
-            border: 5px solid #E2E8F0;
+            border: 6px solid #E2E8F0;
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -325,59 +432,127 @@
             to { transform: rotate(360deg); }
         }
 
+        .loading-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .loading-hint {
+            font-size: 15px;
+            color: #718096;
+        }
+
+        /* ========== MODE SELECTOR ========== */
+        .mode-selector {
+            background: linear-gradient(135deg, #F3E8FF, #E9D5FF);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .mode-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--dark);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .mode-card {
+            background: white;
+            border: 4px solid #E2E8F0;
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .mode-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .mode-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .mode-label {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
         /* ========== GAME AREA ========== */
         .game {
             animation: slideUp 0.5s;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .question-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px dashed #E2E8F0;
+            border-bottom: 3px dashed #E2E8F0;
         }
 
         .question-counter {
             background: var(--primary);
             color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 900;
             font-size: 15px;
         }
 
         .difficulty {
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 14px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 900;
+            font-size: 13px;
             text-transform: uppercase;
         }
 
-        .difficulty-fácil { background: #D1FAE5; color: #065F46; }
-        .difficulty-médio { background: #FEF3C7; color: #78350F; }
-        .difficulty-difícil { background: #FEE2E2; color: #991B1B; }
+        .difficulty-fácil {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .difficulty-médio {
+            background: #FEF3C7;
+            color: #78350F;
+        }
+
+        .difficulty-difícil {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
 
         .question-box {
-            background: linear-gradient(135deg, #F0F9FF, #E0F2FE);
-            padding: 30px;
-            border-radius: var(--radius-md);
-            margin-bottom: 25px;
+            background: linear-gradient(135deg, #E0F2FE, #DBEAFE);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 20px;
             border-left: 6px solid var(--secondary);
         }
 
         .question-text {
-            font-size: 22px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
             color: var(--dark);
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         /* ========== OPTIONS ========== */
@@ -387,14 +562,14 @@
         }
 
         .option {
-            padding: 20px;
+            padding: 18px;
             background: white;
-            border: 3px solid #E2E8F0;
-            border-radius: var(--radius-md);
+            border: 4px solid #E2E8F0;
+            border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s;
             font-size: 16px;
-            font-weight: 500;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 15px;
@@ -402,21 +577,21 @@
 
         .option:hover {
             border-color: var(--primary);
-            transform: translateX(5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateX(8px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
 
         .option-letter {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary), #FF8FB9);
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            font-size: 18px;
+            font-weight: 900;
+            font-size: 20px;
             flex-shrink: 0;
         }
 
@@ -424,6 +599,12 @@
             background: var(--success);
             color: white;
             border-color: var(--success);
+            animation: pulse 0.5s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         .option.correct .option-letter {
@@ -438,44 +619,45 @@
             animation: shake 0.5s;
         }
 
-        .option.wrong .option-letter {
-            background: white;
-            color: var(--error);
-        }
-
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
             75% { transform: translateX(10px); }
         }
 
+        .option.wrong .option-letter {
+            background: white;
+            color: var(--error);
+        }
+
         /* ========== COMPLETAR FRASE ========== */
         .fill-blank-container {
             background: linear-gradient(135deg, #FFF9E6, #FFFBF0);
-            padding: 30px;
-            border-radius: var(--radius-md);
-            margin-bottom: 25px;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 20px;
         }
 
         .sentence-with-blank {
-            font-size: 20px;
+            font-size: 19px;
             line-height: 1.8;
             color: var(--dark);
             margin-bottom: 20px;
+            font-weight: 600;
         }
 
         .blank-space {
             display: inline-block;
             min-width: 150px;
             padding: 5px 15px;
-            border-bottom: 3px dashed var(--primary);
-            font-weight: 700;
+            border-bottom: 4px dashed var(--primary);
+            font-weight: 900;
             color: var(--primary);
             background: white;
-            border-radius: 5px;
+            border-radius: 8px;
         }
 
-        /* ========== JOGO DA MEMÓRIA ========== */
+        /* ========== MEMÓRIA ========== */
         .memory-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -485,28 +667,28 @@
 
         .memory-card {
             aspect-ratio: 1;
-            background: linear-gradient(135deg, var(--primary), #FF8FB9);
-            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             transition: all 0.3s;
-            position: relative;
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             padding: 10px;
             text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         .memory-card:hover:not(.matched) {
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
 
         .memory-card.flipped {
             background: white;
-            border: 3px solid var(--secondary);
+            border: 4px solid var(--secondary);
             color: var(--dark);
         }
 
@@ -521,7 +703,7 @@
         .connect-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 40px;
+            gap: 30px;
             margin: 20px 0;
         }
 
@@ -534,12 +716,12 @@
         .connect-item {
             padding: 15px;
             background: white;
-            border: 3px solid #E2E8F0;
-            border-radius: var(--radius-md);
+            border: 4px solid #E2E8F0;
+            border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 15px;
-            font-weight: 500;
+            font-size: 14px;
+            font-weight: 600;
             text-align: center;
         }
 
@@ -563,9 +745,9 @@
 
         /* ========== FEEDBACK ========== */
         .feedback {
-            margin-top: 25px;
+            margin-top: 20px;
             padding: 25px;
-            border-radius: var(--radius-md);
+            border-radius: 20px;
             animation: fadeIn 0.5s;
         }
 
@@ -580,15 +762,15 @@
         }
 
         .feedback-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 15px;
+            font-size: 26px;
+            font-weight: 900;
+            margin-bottom: 12px;
             text-align: center;
         }
 
         .feedback-points {
             font-size: 20px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 15px;
             text-align: center;
         }
@@ -596,36 +778,37 @@
         .explanation {
             background: rgba(255,255,255,0.2);
             padding: 15px;
-            border-radius: var(--radius-sm);
+            border-radius: 15px;
             margin-top: 15px;
             font-size: 15px;
             line-height: 1.6;
+            font-weight: 600;
         }
 
-        /* ========== FINAL SCREEN ========== */
+        /* ========== TELA FINAL ========== */
         .final {
             text-align: center;
             padding: 40px 20px;
         }
 
         .final-trophy {
-            font-size: 100px;
+            font-size: 110px;
             margin-bottom: 20px;
-            animation: bounce 1s infinite;
+            animation: bounce 1.5s infinite;
         }
 
         .final-score {
-            font-size: 56px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            font-size: 60px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin: 20px 0;
         }
 
         .final-message {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 26px;
+            font-weight: 900;
             color: var(--dark);
             margin: 20px 0;
         }
@@ -642,150 +825,67 @@
         }
 
         .final-stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--primary);
+            font-size: 40px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .final-stat-label {
             font-size: 14px;
             color: #718096;
+            font-weight: 700;
         }
 
-        /* ========== CACHE INFO ========== */
-        .cache-info {
-            background: linear-gradient(135deg, #E0F2FE, #DBEAFE);
-            border: 2px solid var(--secondary);
-            border-radius: var(--radius-md);
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .cache-icon {
-            font-size: 32px;
-        }
-
-        .cache-text {
-            flex: 1;
-            font-size: 14px;
-            color: var(--dark);
-        }
-
-        /* ========== GAME MODE SELECTOR ========== */
-        .mode-selector {
-            background: linear-gradient(135deg, #F3E8FF, #E9D5FF);
-            border-radius: var(--radius-md);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .mode-title {
-            font-family: 'Fredoka', cursive;
-            font-size: 20px;
-            color: var(--dark);
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .mode-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .mode-btn {
-            padding: 15px;
-            background: white;
-            border: 3px solid #E2E8F0;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-        }
-
-        .mode-btn:hover {
-            border-color: var(--primary);
-            transform: scale(1.05);
-        }
-
-        .mode-icon {
-            font-size: 32px;
-            margin-bottom: 5px;
-        }
-
-        .mode-label {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        /* ========== ERROR MESSAGE ========== */
+        /* ========== ERROR ========== */
         .error-message {
             background: linear-gradient(135deg, var(--error), #FF8FA3);
             color: white;
-            padding: 20px;
-            border-radius: var(--radius-md);
+            padding: 25px;
+            border-radius: 20px;
             margin: 20px 0;
             text-align: center;
         }
 
         .error-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 10px;
+            font-size: 26px;
+            font-weight: 900;
+            margin-bottom: 12px;
         }
 
-        /* ========== CONNECTION STATUS ========== */
-        .connection-status {
-            background: #FFF5F5;
-            border: 2px solid var(--error);
-            border-radius: var(--radius-md);
-            padding: 15px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .connection-status.active {
-            display: block;
-        }
-
-        .connection-status.connected {
-            background: #F0FFF4;
-            border-color: var(--success);
-        }
-        
         /* ========== SAVED LESSONS ========== */
-        .saved-lessons-card {
-            background-color: #fff;
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
         .saved-lesson-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            padding: 15px;
+            border-bottom: 2px solid #E2E8F0;
+            gap: 10px;
         }
+
         .saved-lesson-item:last-child {
             border-bottom: none;
         }
+
         .saved-lesson-name {
-            font-weight: 600;
+            font-weight: 700;
+            color: var(--dark);
+            flex: 1;
         }
+
+        .saved-lesson-actions {
+            display: flex;
+            gap: 8px;
+        }
+
         .saved-lesson-actions .btn {
-            padding: 8px 12px;
-            font-size: 14px;
+            padding: 8px 15px;
+            font-size: 13px;
         }
 
         /* ========== UTILITY ========== */
         .hidden { display: none !important; }
-        .text-center { text-align: center; }
-        .mb-20 { margin-bottom: 20px; }
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 600px) {
@@ -796,30 +896,40 @@
             .btn-group { flex-direction: column; }
             .final-stats { flex-direction: column; gap: 15px; }
             .memory-grid { grid-template-columns: repeat(3, 1fr); }
-            .connect-container { grid-template-columns: 1fr; gap: 20px; }
+            .connect-container { grid-template-columns: 1fr; gap: 15px; }
             .mode-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- CONNECTION STATUS -->
-        <div class="connection-status" id="connectionStatus">
-            <div style="font-weight: 600; margin-bottom: 5px;">⚠️ Status da Conexão</div>
-            <div id="connectionMessage">Verificando conexão com o servidor...</div>
-        </div>
+    <!-- Formas flutuantes animadas -->
+    <div class="floating-shapes">
+        <div class="shape" style="font-size: 40px;">🌟</div>
+        <div class="shape" style="font-size: 35px;">⭐</div>
+        <div class="shape" style="font-size: 45px;">✨</div>
+        <div class="shape" style="font-size: 38px;">💫</div>
+        <div class="shape" style="font-size: 42px;">🎯</div>
+    </div>
 
+    <div class="container">
         <!-- HEADER -->
         <header class="header">
             <div class="logo">🎮 SchoolQuest</div>
-            <div class="subtitle" id="subtitleArea">
-                Aprender brincando é mais divertido!
+            <div class="subtitle">Aprender brincando é muito mais divertido! 🚀</div>
+            
+            <div class="user-info" id="userInfo">
+                <div class="user-badge">
+                    <span>👤</span>
+                    <span id="usernameDisplay">Carregando...</span>
+                </div>
+                <button class="btn-logout" onclick="logout()">🚪 Sair</button>
             </div>
             
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-value" id="points">0</div>
-                    <div class="stat-label">Pontos 🎯</div>
+                    <div class="stat-label">🎯 Pontos</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="stars">⭐⭐⭐</div>
@@ -827,7 +937,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="level">1</div>
-                    <div class="stat-label">Nível 🏆</div>
+                    <div class="stat-label">🏆 Nível</div>
                 </div>
             </div>
 
@@ -836,19 +946,9 @@
             </div>
         </header>
 
-        <!-- CACHE INFO -->
-        <div class="cache-info hidden" id="cacheInfo">
-            <div class="cache-icon">💾</div>
-            <div class="cache-text">
-                <strong>Quiz pronto!</strong> Escolha um modo de jogo ou salve a lição.
-            </div>
-        </div>
-
         <!-- UPLOAD CARD -->
         <div class="card" id="uploadCard">
-            <h2 class="card-title">
-                Pronto para o desafio? 👋
-            </h2>
+            <h2 class="card-title">🎯 Pronto para a Aventura?</h2>
 
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('image')">
@@ -864,17 +964,17 @@
 
             <!-- IMAGE TAB -->
             <div id="imageTab">
-                <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
                     <div class="upload-icon">📸</div>
-                    <div class="upload-text">Tire uma foto do dever de casa</div>
-                    <div class="upload-hint">Ou arraste a imagem aqui</div>
+                    <div class="upload-text">Tire uma foto do dever de casa!</div>
+                    <div class="upload-hint">Ou arraste a imagem aqui 🎨</div>
                 </div>
                 <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden">
 
                 <div id="preview" class="hidden preview">
                     <img id="previewImg" alt="Preview">
                     <button class="btn btn-primary btn-full" onclick="processImage()" style="margin-top: 20px;">
-                        🚀 Começar o Jogo!
+                        🚀 Começar a Aventura!
                     </button>
                 </div>
             </div>
@@ -884,18 +984,18 @@
                 <textarea 
                     id="textInput" 
                     class="text-input" 
-                    placeholder="Cole ou digite o texto do dever de casa aqui... 📝"></textarea>
+                    placeholder="Cole ou digite o texto do dever de casa aqui... 📝
+
+Exemplo: 
+Maria tem 5 maçãs e ganhou mais 3. Quantas maçãs ela tem agora?"></textarea>
                 <button class="btn btn-primary btn-full" onclick="processText()" style="margin-top: 20px;">
-                    🎯 Criar Quiz!
+                    🎯 Criar Quiz Divertido!
                 </button>
             </div>
 
             <!-- SAVED LESSONS TAB -->
             <div id="savedTab" class="hidden">
-                <div class="saved-lessons-card">
-                    <h3 class="card-title">Lições Salvas</h3>
-                    <div id="savedLessonsList"></div>
-                </div>
+                <div id="savedLessonsList" style="min-height: 200px;"></div>
             </div>
         </div>
 
@@ -903,12 +1003,8 @@
         <div class="card hidden" id="loading">
             <div class="loading">
                 <div class="spinner"></div>
-                <div style="font-size: 20px; font-weight: 600; color: var(--primary); margin-bottom: 10px;">
-                    Preparando o jogo...
-                </div>
-                <div style="font-size: 15px; color: #718096;">
-                    Analisando o conteúdo com IA... ✨
-                </div>
+                <div class="loading-text">🎨 Criando seu jogo...</div>
+                <div class="loading-hint">A inteligência artificial está preparando questões super divertidas! ✨</div>
             </div>
         </div>
 
@@ -917,14 +1013,12 @@
     </div>
 
     <script>
-        // ========== CONFIGURAÇÃO DA API - AUTO-DETECÇÃO ========== 
+        // ========== CONFIGURAÇÃO DA API ========== 
         const API_BASE_URL = (() => {
             const hostname = window.location.hostname;
-            
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
                 return 'http://localhost:8000';
             }
-            
             return 'https://schoolquest-aukm.onrender.com';
         })();
 
@@ -934,26 +1028,19 @@
         const token = localStorage.getItem('token');
         const username = localStorage.getItem('username');
 
-        // Redirecionar para login se não autenticado
         if (!token) {
-            console.warn('⚠️ Token não encontrado. Redirecionando para login...');
+            console.warn('⚠️ Token não encontrado. Redirecionando...');
             window.location.href = '/login.html';
         }
 
-        // Exibir username e botão de logout
         if (username) {
-            const subtitleArea = document.getElementById('subtitleArea');
-            subtitleArea.innerHTML = `
-                <span>Bem-vindo, <strong>${username}</strong>! 🎉</span>
-                <button class="btn-logout" onclick="logout()">🚪 Sair</button>
-            `;
+            document.getElementById('usernameDisplay').textContent = username;
         }
 
         function logout() {
-            if (confirm('Tem certeza que deseja sair?')) {
+            if (confirm('🦸 Tem certeza que quer sair da aventura?')) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('username');
-                console.log('👋 Logout realizado');
                 window.location.href = '/login.html';
             }
         }
@@ -973,37 +1060,26 @@
             } catch (error) {
                 clearTimeout(timeoutId);
                 if (error.name === 'AbortError') {
-                    throw new Error('Tempo esgotado. O servidor pode estar reiniciando.');
+                    throw new Error('⏰ Tempo esgotado. Tente novamente!');
                 }
                 throw error;
             }
         }
 
-        // ========== CHAMADAS DE API COM TOKEN JWT ========== 
+        // ========== CHAMADAS DE API ========== 
         async function callProcessImage(file) {
-            const token = localStorage.getItem('token');
-            
-            if (!token) {
-                throw new Error('Token não encontrado. Faça login novamente.');
-            }
-
             const formData = new FormData();
             formData.append('file', file);
 
-            console.log('📤 Enviando imagem com autenticação...');
-
             const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-image`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             }, 60000);
 
             if (response.status === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('username');
-                alert('Sessão expirada. Faça login novamente.');
+                localStorage.clear();
+                alert('⏰ Sessão expirada! Faça login novamente.');
                 window.location.href = '/login.html';
                 throw new Error('Sessão expirada');
             }
@@ -1017,23 +1093,18 @@
         }
 
         async function callProcessText(text) {
-            const token = localStorage.getItem('token');
-
-            console.log('📤 Enviando texto...');
-
             const response = await fetchWithTimeout(`${API_BASE_URL}/api/process-text`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token && { 'Authorization': `Bearer ${token}` })
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ text })
             }, 60000);
 
-            if (response.status === 401 && token) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('username');
-                alert('Sessão expirada. Faça login novamente.');
+            if (response.status === 401) {
+                localStorage.clear();
+                alert('⏰ Sessão expirada! Faça login novamente.');
                 window.location.href = '/login.html';
                 throw new Error('Sessão expirada');
             }
@@ -1044,44 +1115,6 @@
             }
 
             return await response.json();
-        }
-
-        // ========== CONNECTION CHECK ========== 
-        async function checkConnection() {
-            const statusDiv = document.getElementById('connectionStatus');
-            const messageDiv = document.getElementById('connectionMessage');
-            
-            try {
-                console.log('🔍 Verificando conexão...');
-                
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-                
-                const response = await fetch(`${API_BASE_URL}/api/health`, {
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Backend conectado:', data);
-                    
-                    statusDiv.classList.add('connected');
-                    messageDiv.innerHTML = `✅ Conectado! (${data.ai_provider.toUpperCase()})`;
-                    
-                    setTimeout(() => {
-                        statusDiv.classList.remove('active');
-                    }, 3000);
-                } else {
-                    throw new Error(`Servidor retornou: ${response.status}`);
-                }
-            } catch (error) {
-                console.error('❌ Erro de conexão:', error);
-                
-                statusDiv.classList.add('active');
-                messageDiv.innerHTML = `⚠️ Não foi possível conectar ao servidor.`;
-            }
         }
 
         // ========== GAME MODES ========== 
@@ -1101,7 +1134,6 @@
             stars: 3,
             level: 1,
             uploadedFile: null,
-            isFromCache: false,
             currentMode: GAME_MODES.MULTIPLE_CHOICE,
             memoryFlipped: [],
             memoryMatched: [],
@@ -1117,7 +1149,7 @@
             
             toFillBlank: (q) => {
                 const correctAnswer = q.options[q.correct];
-                const sentence = q.question.replace('?', '').replace('🧠', '').trim();
+                const sentence = q.question.replace('?', '').replace(/🦸|🎯|Super Herói!|Sua missão é:/gi, '').trim();
                 return {
                     ...q,
                     sentence: sentence,
@@ -1128,7 +1160,7 @@
             
             toMemory: (questions) => {
                 const pairs = questions.slice(0, 6).map(q => ({
-                    question: q.question.replace('🧠', '').substring(0, 40) + '...',
+                    question: q.question.replace(/🦸|🎯|Super Herói!|Sua missão é:/gi, '').substring(0, 45) + '...',
                     answer: q.options[q.correct],
                     explanation: q.explanation
                 }));
@@ -1145,7 +1177,7 @@
             toConnect: (questions) => {
                 const pairs = questions.slice(0, 5).map((q, i) => ({
                     id: i,
-                    question: q.question.replace('🧠', '').trim(),
+                    question: q.question.replace(/🦸|🎯|Super Herói!|Sua missão é:/gi, '').trim(),
                     answer: q.options[q.correct],
                     explanation: q.explanation,
                     points: q.points
@@ -1159,27 +1191,27 @@
             modeSelector: () => `
                 <div class="card">
                     <div class="mode-selector">
-                        <div class="mode-title">🎯 Escolha o Modo de Jogo</div>
+                        <div class="mode-title">🎯 Escolha Seu Jogo!</div>
                         <div class="mode-grid">
-                            <div class="mode-btn" onclick="selectMode('${GAME_MODES.MULTIPLE_CHOICE}')">
+                            <div class="mode-card" onclick="selectMode('${GAME_MODES.MULTIPLE_CHOICE}')">
                                 <div class="mode-icon">✅</div>
-                                <div class="mode-label">Múltipla Escolha</div>
+                                <div class="mode-label">Quiz</div>
                             </div>
-                            <div class="mode-btn" onclick="selectMode('${GAME_MODES.FILL_BLANK}')">
+                            <div class="mode-card" onclick="selectMode('${GAME_MODES.FILL_BLANK}')">
                                 <div class="mode-icon">✏️</div>
-                                <div class="mode-label">Completar Frase</div>
+                                <div class="mode-label">Completar</div>
                             </div>
-                            <div class="mode-btn" onclick="selectMode('${GAME_MODES.MEMORY}')">
+                            <div class="mode-card" onclick="selectMode('${GAME_MODES.MEMORY}')">
                                 <div class="mode-icon">🧠</div>
-                                <div class="mode-label">Jogo da Memória</div>
+                                <div class="mode-label">Memória</div>
                             </div>
-                            <div class="mode-btn" onclick="selectMode('${GAME_MODES.CONNECT}')">
+                            <div class="mode-card" onclick="selectMode('${GAME_MODES.CONNECT}')">
                                 <div class="mode-icon">🔗</div>
-                                <div class="mode-label">Ligar Pontos</div>
+                                <div class="mode-label">Ligar</div>
                             </div>
                         </div>
-                        <div class="btn-group" style="margin-top: 20px;">
-                           <button class="btn btn-secondary" onclick="saveLesson()">💾 Salvar Lição</button>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="saveLesson()">💾 Salvar</button>
                         </div>
                     </div>
                 </div>
@@ -1218,16 +1250,16 @@
 
                     <div class="fill-blank-container">
                         <div class="sentence-with-blank">
-                            ${q.sentence} <span class="blank-space" id="blankSpace">___________</span>
+                            ${q.sentence} <span class="blank-space" id="blankSpace">_______</span>
                         </div>
-                        <div style="text-align: center; color: #718096; font-size: 14px; margin-top: 10px;">
-                            Complete a frase escolhendo a palavra correta abaixo ✏️
+                        <div style="text-align: center; color: #718096; font-size: 14px; margin-top: 10px; font-weight: 600;">
+                            ✏️ Complete com a palavra certa!
                         </div>
                     </div>
 
                     <div class="options">
                         ${q.options.map((opt, i) => `
-                            <div class="option" onclick="selectFillBlank(${i}, '${opt.replace(/'/g, "\'")}')">
+                            <div class="option" onclick="selectFillBlank(${i}, '${opt.replace(/'/g, "\\'")}')">
                                 <div class="option-letter">${String.fromCharCode(65 + i)}</div>
                                 <div>${opt}</div>
                             </div>
@@ -1241,8 +1273,8 @@
             memory: (cards) => `
                 <div class="card game">
                     <div class="card-title">🧠 Jogo da Memória</div>
-                    <div style="text-align: center; color: #718096; margin-bottom: 20px;">
-                        Encontre os pares de perguntas e respostas!
+                    <div style="text-align: center; color: #718096; margin-bottom: 20px; font-weight: 600;">
+                        Encontre os pares de perguntas e respostas! 🎯
                     </div>
 
                     <div class="memory-grid" id="memoryGrid">
@@ -1269,8 +1301,8 @@
             connect: (pairs) => `
                 <div class="card game">
                     <div class="card-title">🔗 Ligar Pontos</div>
-                    <div style="text-align: center; color: #718096; margin-bottom: 20px;">
-                        Clique em uma pergunta e depois na resposta correspondente!
+                    <div style="text-align: center; color: #718096; margin-bottom: 20px; font-weight: 600;">
+                        Conecte cada pergunta com sua resposta! 🎯
                     </div>
 
                     <div class="connect-container">
@@ -1312,13 +1344,13 @@
 
             feedback: (correct, points, explanation) => `
                 <div class="feedback feedback-${correct ? 'correct' : 'wrong'}">
-                    <div class="feedback-title">${correct ? '🎉 Parabéns!' : '❌ Ops!'}</div>
+                    <div class="feedback-title">${correct ? '🎉 Incrível!' : '💪 Quase lá!'}</div>
                     <div class="feedback-points">
-                        ${correct ? `+${points} pontos` : 'Tente novamente!'}
+                        ${correct ? `+${points} pontos conquistados!` : 'Não desista, você consegue!'}
                     </div>
-                    ${explanation ? `<div class="explanation">💡 ${explanation}</div>` : ''}
+                    ${explanation ? `<div class="explanation">${explanation}</div>` : ''}
                     <button class="btn btn-primary btn-full" onclick="nextQuestion()" style="margin-top: 20px;">
-                        Próxima Pergunta &rarr;
+                        Próxima Missão! 🚀
                     </button>
                 </div>
             `,
@@ -1326,7 +1358,7 @@
             error: (message) => `
                 <div class="card">
                     <div class="error-message">
-                        <div class="error-title">⚠️ Erro</div>
+                        <div class="error-title">⚠️ Ops!</div>
                         <div>${message}</div>
                     </div>
                     <button class="btn btn-primary btn-full" onclick="location.reload()">
@@ -1358,7 +1390,7 @@
 
         // ========== FILE HANDLING ========== 
         const fileInput = document.getElementById('fileInput');
-        const dropZone = document.getElementById('dropZone');
+        const dropZone = document.querySelector('.upload-zone');
 
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -1416,7 +1448,7 @@
         async function processText() {
             const text = document.getElementById('textInput').value.trim();
             if (!text) {
-                alert('Por favor, insira algum texto!');
+                alert('🦸 Por favor, insira algum texto para criar o jogo!');
                 return;
             }
             
@@ -1441,7 +1473,6 @@
         // ========== MODE SELECTION ========== 
         function showModeSelector() {
             document.getElementById('uploadCard').classList.add('hidden');
-            document.getElementById('cacheInfo').classList.remove('hidden');
             
             const gameArea = document.getElementById('gameArea');
             gameArea.innerHTML = templates.modeSelector();
@@ -1572,7 +1603,7 @@
             state.memoryFlipped.push(index);
             
             if (state.memoryFlipped.length === 2) {
-                setTimeout(() => checkMemoryMatch(), 500);
+                setTimeout(() => checkMemoryMatch(), 600);
             }
         }
 
@@ -1685,10 +1716,10 @@
 
         function saveLesson() {
             if (state.originalQuestions.length === 0) {
-                alert("Não há nenhuma lição para salvar!");
+                alert("⚠️ Não há nenhuma lição para salvar!");
                 return;
             }
-            const lessonName = prompt("Digite um nome para esta lição:", `Lição de ${new Date().toLocaleDateString()}`);
+            const lessonName = prompt("📚 Digite um nome para esta lição:", `Lição de ${new Date().toLocaleDateString()}`);
             if (lessonName) {
                 const savedLessons = getSavedLessons();
                 savedLessons.push({
@@ -1697,7 +1728,7 @@
                     createdAt: new Date().toISOString()
                 });
                 localStorage.setItem('savedLessons', JSON.stringify(savedLessons));
-                alert(`Lição "${lessonName}" salva!`);
+                alert(`✅ Lição "${lessonName}" salva com sucesso!`);
                 loadSavedLessons();
             }
         }
@@ -1706,7 +1737,7 @@
             const savedLessons = getSavedLessons();
             const listDiv = document.getElementById('savedLessonsList');
             if (savedLessons.length === 0) {
-                listDiv.innerHTML = '<p style="text-align: center; color: #718096;">Nenhuma lição salva ainda.</p>';
+                listDiv.innerHTML = '<p style="text-align: center; color: #718096; padding: 40px; font-weight: 600;">📚 Nenhuma lição salva ainda.<br>Salve suas lições favoritas!</p>';
                 return;
             }
 
@@ -1715,7 +1746,7 @@
                     <span class="saved-lesson-name">${lesson.name}</span>
                     <div class="saved-lesson-actions">
                         <button class="btn btn-primary" onclick="playSavedLesson(${index})">▶️ Jogar</button>
-                        <button class="btn btn-error" onclick="deleteSavedLesson(${index})">🗑️ Excluir</button>
+                        <button class="btn btn-accent" onclick="deleteSavedLesson(${index})">🗑️</button>
                     </div>
                 </div>
             `).join('');
@@ -1732,14 +1763,13 @@
         }
 
         function deleteSavedLesson(index) {
-            if (confirm("Tem certeza que deseja excluir esta lição?")) {
+            if (confirm("🗑️ Tem certeza que deseja excluir esta lição?")) {
                 let savedLessons = getSavedLessons();
                 savedLessons.splice(index, 1);
                 localStorage.setItem('savedLessons', JSON.stringify(savedLessons));
                 loadSavedLessons();
             }
         }
-
 
         // ========== STATS & PROGRESS ========== 
         function updateStats() {
@@ -1768,25 +1798,31 @@
             const totalQuestions = state.questions.length;
             
             let trophy = '🏆';
-            let message = 'Você é incrível!';
+            let message = 'Você é incrível, Super Herói!';
             
             if (state.points >= totalQuestions * 15) {
-                trophy = '🥇';
-                message = 'Perfeito! Você é um gênio!';
+                trophy = '👑';
+                message = 'PERFEITO! Você é um GÊNIO!';
+                state.level++;
             } else if (state.points >= totalQuestions * 10) {
-                trophy = '🥈';
-                message = 'Muito bem! Continue assim!';
+                trophy = '🥇';
+                message = 'EXCELENTE! Você mandou muito bem!';
             } else if (state.points >= totalQuestions * 5) {
+                trophy = '🥈';
+                message = 'MUITO BOM! Continue assim!';
+            } else {
                 trophy = '🥉';
-                message = 'Bom trabalho! Pratique mais!';
+                message = 'BOM TRABALHO! Pratique mais!';
             }
+            
+            updateStats();
             
             gameArea.innerHTML = `
                 <div class="card final">
                     <div class="final-trophy">${trophy}</div>
                     <div class="final-message">${message}</div>
                     <div class="final-score">${state.points}</div>
-                    <div style="color: #718096; margin-bottom: 30px;">pontos conquistados!</div>
+                    <div style="color: #718096; margin-bottom: 30px; font-weight: 700; font-size: 18px;">pontos conquistados!</div>
                     
                     <div class="final-stats">
                         <div class="final-stat">
@@ -1805,10 +1841,10 @@
 
                     <div class="btn-group">
                         <button class="btn btn-primary" onclick="location.reload()">
-                            🏠 Início
+                            🏠 Nova Aventura
                         </button>
                         <button class="btn btn-accent" onclick="restartWithNewMode()">
-                            🔄 Novo Modo
+                            🔄 Outro Jogo
                         </button>
                     </div>
                 </div>
@@ -1835,7 +1871,6 @@
 
         // ========== INIT ========== 
         updateStats();
-        checkConnection();
         loadSavedLessons();
     </script>
 </body>

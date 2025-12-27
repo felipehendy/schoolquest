@@ -129,8 +129,8 @@ generation_config = {
 # =========================================================
 app = FastAPI(
     title="SchoolQuest API",
-    version="4.0.0",
-    description="API gamificada com OpenAI e autenticação"
+    version="5.0.0",
+    description="API gamificada educacional para crianças com OpenAI"
 )
 
 app.add_middleware(
@@ -162,20 +162,15 @@ class RegisterInput(BaseModel):
 class TextInput(BaseModel):
     text: str
 
-class ShuffleInput(BaseModel):
-    questions: list
-
 # =========================================================
 # FUNÇÕES UTILITÁRIAS
 # =========================================================
 def get_html_file(filename: str) -> HTMLResponse:
-    """Busca arquivo HTML na raiz ou na pasta static (compatível com Render)"""
-    # Tenta primeiro na raiz (desenvolvimento local)
+    """Busca arquivo HTML na raiz ou na pasta static"""
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     
-    # Tenta na pasta static (Render)
     static_path = os.path.join("static", filename)
     if os.path.exists(static_path):
         with open(static_path, "r", encoding="utf-8") as f:
@@ -247,7 +242,7 @@ def create_game_prompt(content_description: str = "") -> str:
 com foco em aprendizagem ativa e divertida, raciocínio lógico, criatividade e gamificação.
 
 Você trabalha para uma plataforma educacional chamada SCHOOLQUEST,
-onde o aprendizado acontece por meio de DESAFIOS e JOGOS Divertidos.
+onde o aprendizado acontece por meio de DESAFIOS e JOGOS DIVERTIDOS.
 
 ══════════════════════════════════════
 🎯 ETAPA 1 — IDENTIFICAÇÃO DA MATÉRIA
@@ -262,7 +257,7 @@ Matérias possíveis:
 - Geografia
 - Inglês
 - Conhecimentos Gerais
-- Todas as Materias existentes
+- Artes
 
 ══════════════════════════════════════
 🎯 ETAPA 2 — REGRAS POR MATÉRIA
@@ -274,31 +269,46 @@ Matérias possíveis:
 - CRIE CÁLCULOS NOVOS, mesmo que o texto não tenha números
 - Use obrigatoriamente:
   • soma, subtração, multiplicação, divisão simples
+  • problemas com dinheiro (moedas, troco, compras)
+  • medidas (tempo, peso, comprimento)
+  • geometria básica (formas, contagem de lados)
 - Crie situações do cotidiano infantil de maneira Divertida:
-  • dinheiro, brinquedos, frutas, tempo, escola
+  • brinquedos, frutas, animais de estimação, escola
+  • festas de aniversário, jogos, esportes
 - Exija raciocínio lógico e cálculo mental
+- Use linguagem de aventura: "missão", "desafio", "conquista"
 
 📗 SE A MATÉRIA FOR **PORTUGUÊS**:
-- Trabalhe: interpretação de texto, ortografia, sinônimos e antônimos, gramática básica
-- Pode criar exemplos novos além do texto
+- Trabalhe: interpretação de texto, ortografia, sinônimos e antônimos
+- Gramática básica (substantivos, adjetivos, verbos)
+- Pontuação e acentuação de forma lúdica
+- Use exemplos do universo infantil
 
 📙 SE A MATÉRIA FOR **CIÊNCIAS**:
-- Use perguntas sobre: corpo humano, natureza, animais, meio ambiente
-- Linguagem simples e educativa e divertida.
+- Use perguntas sobre: corpo humano, animais, plantas
+- Ciclos da natureza, estados da matéria
+- Meio ambiente e sustentabilidade
+- Experimentos simples e observações
+- Linguagem simples e educativa
 
 📕 SE A MATÉRIA FOR **HISTÓRIA**:
-- Perguntas sobre: fatos históricos, personagens, datas importantes
-- Sempre contextualizadas
+- Fatos históricos adaptados para crianças
+- Personagens importantes e suas contribuições
+- Datas comemorativas e seu significado
+- Sempre contextualizada e interessante
 
 📒 SE A MATÉRIA FOR **GEOGRAFIA**:
-- Trabalhe: mapas, países, estados, clima, natureza
-- Use exemplos do cotidiano
+- Trabalhe: mapas, países, estados brasileiros
+- Clima, relevo, vegetação de forma lúdica
+- Pontos turísticos famosos
+- Culturas e costumes diferentes
 
 📔 SE A MATÉRIA FOR **INGLÊS**:
-- Use palavras simples
-- Trabalhe: cores, números, animais, objetos
+- Palavras simples do cotidiano
+- Cores, números, animais, objetos
+- Frases básicas de cumprimento
 - Pode misturar português + inglês
-- As explicações serão em Portugues Brasil, explicando o porque usou o inglês
+- Explicações sempre em Português Brasil
 
 ══════════════════════════════════════
 📚 CONTEÚDO DO ALUNO
@@ -316,40 +326,42 @@ Retorne SOMENTE JSON válido, sem texto explicativo antes ou depois.
 {{
   "questions": [
     {{
-      "question": "Pergunta com emoji chamando de super heroi com uma super missão 😊",
+      "question": "🦸 Super Herói! Sua missão é: [pergunta clara e divertida] 🎯",
       "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
       "correct": 0,
-      "explanation": "Explicação educativa clara",
+      "explanation": "🎉 Explicação educativa e encorajadora!",
       "points": 15,
       "difficulty": "médio"
     }}
   ]
 }}
 
-**REGRAS FINAIS**:
-1. Use linguagem SIMPLES para crianças de 8-10 anos
-2. Inclua emojis nas perguntas para deixar divertido
-3. Crie entre 10 a 20 questões SOBRE O CONTEÚDO ENVIADO
+**REGRAS FINAIS OBRIGATÓRIAS**:
+1. Use linguagem SIMPLES e DIVERTIDA para crianças de 8-10 anos
+2. Inclua emojis nas perguntas para tornar mágico e divertido
+3. Crie entre 10 a 15 questões SOBRE O CONTEÚDO ENVIADO
 4. Cada questão: exatamente 4 opções
 5. Campo "correct": número de 0 a 3 (índice da resposta correta)
 6. Dificuldade: "fácil" (10 pontos), "médio" (15 pontos), "difícil" (20 pontos)
-7. Explicação: clara, educativa e encorajadora
-8. Se tiver Logado um menino user termos de super hérois
-9. Se tiver Logado uma menina use termos como Princesa
+7. Explicação: clara, educativa, encorajadora e com emoji
+8. Use termos de aventura: "Super Herói", "Missão", "Desafio", "Conquista"
+9. Torne cada pergunta uma AVENTURA EDUCATIVA
+10. Varie a dificuldade: 40% fácil, 40% médio, 20% difícil
 
 **AGORA GERE O JSON**:"""
     else:
-        prompt = """Você é um assistente educacional. Crie 10 questões educativas variadas para crianças de 8-10 anos.
+        prompt = """Você é um assistente educacional para crianças de 8-10 anos.
+Crie 10 questões educativas variadas e divertidas.
 
 Responda APENAS com JSON válido:
 
 {
   "questions": [
     {
-      "question": "Pergunta com emoji chamando de super heroi com uma super missão 😊",
+      "question": "🦸 Super Herói! Sua missão é: [pergunta divertida] 🎯",
       "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
       "correct": 0,
-      "explanation": "Explicação clara e educativa",
+      "explanation": "🎉 Explicação clara e encorajadora!",
       "points": 15,
       "difficulty": "médio"
     }
@@ -488,14 +500,15 @@ async def health():
         "api_key_set": bool(OPENAI_API_KEY),
         "cache_entries": len(api_cache.cache),
         "cache_ttl_hours": api_cache.ttl / 3600,
-        "version": "4.0.0",
+        "version": "5.0.0",
         "timestamp": time.time(),
         "users_count": len(users_db),
         "features": {
             "text_processing": True,
             "image_processing": True,
             "authentication": True,
-            "guest_mode": True
+            "guest_mode": True,
+            "game_modes": ["multiple_choice", "fill_blank", "memory", "connect"]
         }
     }
 
@@ -565,7 +578,7 @@ async def process_image(file: UploadFile = File(...), username: str = Depends(ge
         image.save(buffered, format="JPEG", quality=85, optimize=True)
         img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
-        prompt = create_game_prompt("Analise esta imagem de um dever de casa e crie questões sobre o conteúdo presente na imagem.")
+        prompt = create_game_prompt("Analise esta imagem de um dever de casa e crie questões educativas divertidas sobre o conteúdo presente na imagem.")
 
         print("🚀 Enviando para OpenAI...")
 
@@ -645,33 +658,6 @@ async def process_text(data: TextInput, username: str = Depends(get_optional_use
             detail=f"Erro ao processar texto: {str(e)}"
         )
 
-@app.post("/api/shuffle-questions")
-async def shuffle_questions(data: ShuffleInput, username: str = Depends(verify_token)):
-    try:
-        import random
-        
-        if not data.questions or len(data.questions) == 0:
-            raise HTTPException(400, "Nenhuma questão fornecida para embaralhar")
-        
-        shuffled = data.questions.copy()
-        random.shuffle(shuffled)
-        
-        for q in shuffled:
-            if "options" in q and "correct" in q:
-                correct_answer = q["options"][q["correct"]]
-                random.shuffle(q["options"])
-                q["correct"] = q["options"].index(correct_answer)
-        
-        print(f"🔀 Embaralhadas {len(shuffled)} questões")
-        
-        return JSONResponse(content={"questions": shuffled})
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(500, f"Erro ao embaralhar: {str(e)}")
-
 # =========================================================
 # INICIALIZAÇÃO DO SERVIDOR
 # =========================================================
@@ -681,13 +667,14 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     
     print("\n" + "="*60)
-    print("🎮 SchoolQuest API v4.0.0")
+    print("🎮 SchoolQuest API v5.0.0 - PROFISSIONAL")
     print("="*60)
     print(f"🤖 Provedor de IA: OPENAI")
     print(f"📦 Modelo ativo: {MODEL_NAME}")
-    print(f"🔐 Autenticação: Habilitada")
-    print(f"👻 Modo Visitante: Habilitado (process-text)")
+    print(f"🔐 Autenticação: Habilitada (JWT)")
+    print(f"👻 Modo Visitante: Habilitado")
     print("💾 Cache: Ativado (24 horas)")
+    print("🎯 Modos de Jogo: 4 (Múltipla Escolha, Completar, Memória, Ligar)")
     print("🔒 CORS: Habilitado")
     print("="*60)
     print(f"📡 Servidor: http://0.0.0.0:{port}")
